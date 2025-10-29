@@ -50,16 +50,26 @@ function readGridString(){
   }
   return out;
 }
+async function loadPuzzleJson(weekId){
+  // GitHub Pages serves files statically; this fetch is same-origin.
+  const url = `puzzles/${encodeURIComponent(weekId)}.json`;
+  const res = await fetch(url, { cache: "no-store" });
+  if (!res.ok) throw new Error(`Puzzle JSON not found for ${weekId}`);
+  return res.json();
+}
 
 async function init(){
-  // 1) Load puzzle from Apps Script
-  const gp = await post("getPuzzle", { weekId: CONFIG.weekId });
-  if (!gp.ok) { S("gateMsg").textContent = gp.error; return; }
-  puzzle = gp.puzzle;
-  S("title").textContent = puzzle.title || "BMB Weekly Crossword";
+  try {
+    puzzle = await loadPuzzleJson(CONFIG.weekId);
+  } catch (e) {
+    S("gateMsg").textContent = e.message || "Failed to load puzzle.";
+    return;
+  }
+
+  S("title").textContent = puzzle.title || `BMB Weekly Crossword — ${CONFIG.weekId}`;
   buildGrid(puzzle.layout);
 
-  // 2) Wire buttons
+  // buttons
   S("toggle").onclick = ()=>{ isAcross = !isAcross; };
   S("clear").onclick = ()=>{ document.querySelectorAll("#grid input").forEach(i=>i.value=""); };
 
@@ -67,6 +77,8 @@ async function init(){
     const name = S("name").value.trim();
     const student = S("student").value.trim();
     if (!name || !student){ S("gateMsg").textContent = "Enter name and student #"; return; }
+
+    // Server creates official start time and will reject if puzzle not open yet
     const st = await post("startAttempt", { weekId: CONFIG.weekId, name, studentNumber: student });
     if (!st.ok){ S("gateMsg").textContent = st.error; return; }
     attemptId = st.attemptId;
