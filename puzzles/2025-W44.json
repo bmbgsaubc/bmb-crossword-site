@@ -1,0 +1,23 @@
+{
+  "weekId": "2025-W44",
+  "title": "Week 01 — Starter",
+  "rows": 5,
+  "cols": 5,
+  "layout": [
+    "HEL#O",
+    "E###L",
+    "L###L",
+    "E###E",
+    "HEL#O"
+  ],
+  "clues": {
+    "across": {
+      "1": "Greeting",
+      "4": "Opposite of bye"
+    },
+    "down": {
+      "1": "Letter after D",
+      "2": "Common vowel"
+    }
+  }
+}
