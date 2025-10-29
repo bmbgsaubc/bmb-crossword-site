@@ -28,13 +28,14 @@
     </section>
   </main>
 
-  <script>
-    // TODO: set these before publishing
-    window.CONFIG = {
-      weekId: "2025-W44",
-      api: "PASTE_YOUR_APPS_SCRIPT_WEBAPP_URL"
-    };
-  </script>
+<script>
+  // Use ?week=2025-W44; fallback to a default
+  const params = new URLSearchParams(location.search);
+  window.CONFIG = {
+    weekId: params.get("week") || "2025-W44",
+    api: "PASTE_YOUR_APPS_SCRIPT_WEBAPP_URL"
+  };
+</script>
   <script src="app.js"></script>
 </body>
 </html>
