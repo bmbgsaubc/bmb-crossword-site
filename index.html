@@ -10,12 +10,26 @@
   <main>
     <h1 id="title">BMB Weekly Crossword</h1>
 
-    <section id="gate">
-      <input id="name" placeholder="Full name" />
-      <input id="student" placeholder="Student number" />
-      <button id="start">Start</button>
-      <div id="gateMsg"></div>
+    <section id="overlay" class="overlay">
+      <div class="card">
+        <h2>Enter your details to start</h2>
+        <input id="f-name" placeholder="Full name" />
+        <input id="f-student" placeholder="Student number" />
+        <input id="f-email" placeholder="Email" />
+        <input id="f-lab" placeholder="Lab" />
+        <button id="btn-begin">Begin</button>
+        <div id="overlayMsg" class="msg"></div>
+      </div>
     </section>
+    
+    <div id="timer" class="timer" style="display:none">00:00.0</div>
+    
+    <div class="controls">
+      <button id="toggle">Toggle Across/Down</button>
+      <button id="clear-word">Clear Word</button>
+      <button id="submit">Submit</button>
+    </div>
+    <div id="result"></div>
 
     <section id="puzzle" style="display:none">
       <div id="grid"></div>
