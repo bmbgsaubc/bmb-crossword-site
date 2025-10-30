@@ -78,12 +78,16 @@ function stopTimer(){
 }
 
 async function post(action, payload){
+  const body = new URLSearchParams();
+  body.set("action", action);
+  body.set("payload", JSON.stringify(payload));
+
   const res = await fetch(CONFIG.api, {
     method: "POST",
-    // Use a "simple" content type to avoid preflight
-    headers: { "Content-Type": "text/plain;charset=utf-8" },
-    body: JSON.stringify({ action, ...payload })
+    headers: { "Content-Type": "application/x-www-form-urlencoded;charset=utf-8" },
+    body
   });
+
   const data = await res.json().catch(() => ({}));
   if (!res.ok || data.ok === false) {
     const msg = (data && data.error) ? data.error : res.statusText;
