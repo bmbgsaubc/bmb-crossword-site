@@ -31,25 +31,26 @@
     </div>
     <div id="result"></div>
 
-    <section id="puzzle" style="display:none">
+    <!-- Puzzle area -->
+    <section id="puzzle">
       <div id="grid"></div>
       <div class="controls">
         <button id="toggle">Toggle Across/Down</button>
-        <button id="clear">Clear</button>
+        <button id="clear-word">Clear Word</button>
         <button id="submit">Submit</button>
       </div>
       <div id="result"></div>
     </section>
   </main>
 
-<script>
-  // Use ?week=2025-W44; fallback to a default
-  const params = new URLSearchParams(location.search);
-  window.CONFIG = {
-    weekId: params.get("week") || "2025-W44",   // must match your JSON filename
-    api: "https://script.google.com/macros/s/AKfycbzJTmEeTl89PSHMQvp_40rIYKxVjRs5XKYlN71gI4UqUYDlmSAnrhgzJ0Zn_5gnkGRz/exec"
-  };
-</script>
+  <script>
+    // Use ?week=2025-W44; fallback to a default
+    const params = new URLSearchParams(location.search);
+    window.CONFIG = {
+      weekId: params.get("week") || "2025-W44",   // must match your JSON filename
+      api: "https://script.google.com/macros/s/AKfycbzJTmEeTl89PSHMQvp_40rIYKxVjRs5XKYlN71gI4UqUYDlmSAnrhgzJ0Zn_5gnkGRz/exec"
+    };
+  </script>
   <script src="app.js"></script>
 </body>
 </html>
