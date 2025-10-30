@@ -174,6 +174,31 @@ async function init(){
     // Don’t block Begin; we’ll try again when Begin is clicked
     console.warn("Preload failed:", e.message);
   }
+  function validatePuzzle(p){
+  if (!p || !Array.isArray(p.layout)) throw new Error("Puzzle missing 'layout' array.");
+  const rows = p.layout.length;
+  if (!rows) throw new Error("Layout has zero rows.");
+  const cols = p.layout[0].length;
+  if (!cols) throw new Error("Layout has zero columns.");
+  for (let i=0;i<rows;i++){
+    if (p.layout[i].length !== cols) {
+      throw new Error(`Row ${i+1} length ${p.layout[i].length} ≠ ${cols}. All rows must be equal.`);
+    }
+    if (/[^A-Za-z#]/.test(p.layout[i])) {
+      throw new Error(`Row ${i+1} contains invalid characters. Use A–Z or '#'.`);
+    }
+  }
+  p.rows = rows; p.cols = cols; // normalize
+  return p;
+}
+
+async function loadPuzzleJson(weekId){
+  const url = `puzzles/${encodeURIComponent(weekId)}.json`;
+  const res = await fetch(url, { cache: "no-store" });
+  if (!res.ok) throw new Error(`Puzzle JSON not found at ${url} (HTTP ${res.status})`);
+  const json = await res.json();
+  return validatePuzzle(json);
+}
 
   // Wire buttons (this is crucial—if IDs don’t match, nothing happens)
   S("btn-begin").onclick = beginFlow;
