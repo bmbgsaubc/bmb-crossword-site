@@ -12,13 +12,6 @@ function logErr(msg, err){
   if (el) el.textContent = msg;
 }
 
-async function loadPuzzleJson(weekId){
-  const url = `puzzles/${encodeURIComponent(weekId)}.json`;
-  const res = await fetch(url, { cache: "no-store" });
-  if (!res.ok) throw new Error(`Puzzle JSON not found (${url})`);
-  return res.json();
-}
-
 function buildGrid(layout){
   const rows = layout.length; const cols = layout[0].length;
   const table = document.createElement("table");
@@ -88,10 +81,13 @@ async function post(action, payload){
     body
   });
 
-  const data = await res.json().catch(() => ({}));
+  const txt = await res.text();           // read as text first (for debugging)
+  let data;
+  try { data = JSON.parse(txt); } catch {
+    throw new Error(`Server did not return JSON: ${txt.slice(0,120)}...`);
+  }
   if (!res.ok || data.ok === false) {
-    const msg = (data && data.error) ? data.error : res.statusText;
-    throw new Error(`API ${action} failed: ${msg}`);
+    throw new Error(data && data.error ? data.error : res.statusText);
   }
   return data;
 }
