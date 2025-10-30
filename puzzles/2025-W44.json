@@ -11,13 +11,7 @@
     "HEL#O"
   ],
   "clues": {
-    "across": {
-      "1": "Greeting",
-      "4": "Opposite of bye"
-    },
-    "down": {
-      "1": "Letter after D",
-      "2": "Common vowel"
-    }
+    "across": { "1": "Greeting", "4": "Opposite of bye" },
+    "down":   { "1": "Letter after D", "2": "Common vowel" }
   }
 }
