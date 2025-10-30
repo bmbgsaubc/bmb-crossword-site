@@ -95,6 +95,94 @@ async function init(){
       ? `Official time: ${(fin.elapsedMs/1000).toFixed(1)} s`
       : "Not correct yet — keep going!";
   };
+  let attemptId = null;
+let timerHandle = null;
+let msElapsed = 0;
+let isAcross = true;
+let puzzle = null;
+
+function formatMs(ms){
+  const t = Math.floor(ms/100);
+  const d = t%10; const s = Math.floor(t/10)%60; const m = Math.floor(t/600);
+  return `${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}.${d}`;
+}
+
+function startTimer(){
+  msElapsed = 0;
+  S("timer").style.display = "inline-block";
+  S("timer").textContent = "00:00.0";
+  timerHandle = setInterval(()=>{
+    msElapsed += 100;
+    S("timer").textContent = formatMs(msElapsed);
+  }, 100);
+}
+function stopTimer(){
+  if (timerHandle){ clearInterval(timerHandle); timerHandle = null; }
+}
+
+async function beginFlow(){
+  const name = S("f-name").value.trim();
+  const student = S("f-student").value.trim();
+  const email = S("f-email").value.trim();
+  const lab = S("f-lab").value.trim();
+  if (!name || !student || !email || !lab){
+    S("overlayMsg").textContent = "Please fill all fields.";
+    return;
+  }
+  // Call server to log official start
+  try{
+    const st = await post("startAttempt", { weekId: CONFIG.weekId, name, studentNumber: student, email, lab });
+    if (!st.ok) throw new Error(st.error);
+    attemptId = st.attemptId;
+    S("overlay").style.display = "none";
+    startTimer();
+  }catch(e){
+    S("overlayMsg").textContent = e.message || "Failed to start.";
+  }
+}
+
+// Clear current word along active direction
+function clearCurrentWord(){
+  const focused = document.activeElement;
+  if (!focused || focused.tagName !== "INPUT") return;
+  const r = +focused.dataset.r, c = +focused.dataset.c;
+  // find word bounds
+  let r0=r, c0=c, r1=r, c1=c;
+  if (isAcross){
+    while (c0-1>=0 && puzzle.layout[r][c0-1] !== "#") c0--;
+    while (c1+1<puzzle.layout[0].length && puzzle.layout[r][c1+1] !== "#") c1++;
+    for (let x=c0; x<=c1; x++){
+      const inp = document.querySelector(`input[data-r="${r}"][data-c="${x}"]`);
+      if (inp) inp.value = "";
+    }
+  } else {
+    while (r0-1>=0 && puzzle.layout[r0-1][c] !== "#") r0--;
+    while (r1+1<puzzle.layout.length && puzzle.layout[r1+1][c] !== "#") r1++;
+    for (let y=r0; y<=r1; y++){
+      const inp = document.querySelector(`input[data-r="${y}"][data-c="${c}"]`);
+      if (inp) inp.value = "";
+    }
+  }
+}
+
+function wireUI(){
+  S("btn-begin").onclick = beginFlow;
+  S("toggle").onclick = ()=>{ isAcross = !isAcross; };
+  S("clear-word").onclick = clearCurrentWord;
+
+  S("submit").onclick = async ()=>{
+    if (!attemptId) { S("result").textContent = "Click Begin first."; return; }
+    stopTimer();
+    const userGridString = readGridString();
+    try{
+      const fin = await post("finishAttempt", { attemptId, userGridString });
+      if (!fin.ok) throw new Error(fin.error);
+      S("result").textContent = `You got ${fin.percentCorrect}% correct. Official time: ${(fin.elapsedMs/1000).toFixed(1)} s`;
+    }catch(e){
+      S("result").textContent = e.message || "Submit failed.";
+    }
+  };
+}
 }
 
 document.addEventListener("DOMContentLoaded", init);
