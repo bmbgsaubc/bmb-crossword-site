@@ -1,17 +1,76 @@
 {
-  "weekId": "2025-W44",
-  "title": "Week 01 — Starter",
-  "rows": 5,
-  "cols": 5,
+  "weekId": "2025-W45",
+  "title": "UBC Biochemistry & Molecular Biology",
+  "rows": 15,
+  "cols": 15,
   "layout": [
-    "HEL#O",
-    "E###L",
-    "L###L",
-    "E###E",
-    "HEL#O"
+    "UBCDEPARTMENT##",
+    "##LSI##########",
+    "MOLDAYLAB######",
+    "PRPH2##########",
+    "RHODOPSIN######",
+    "CNGCHANNEL#####",
+    "PERIPHERIN#####",
+    "GARP2##########",
+    "TURBOID########",
+    "ALPHAFOLD######",
+    "ROSETTA########",
+    "OUTERSEGMENT##",
+    "SDSPAGE########",
+    "COOMASSIE######",
+    "NANODISC#######"
   ],
   "clues": {
-    "across": { "1": "Greeting", "4": "Opposite of bye" },
-    "down":   { "1": "Letter after D", "2": "Common vowel" }
-  }
+    "across": {
+      "1":  { "clue": "Home unit for profs and grads (two words)", "answer": "UBCDEPARTMENT" },
+      "2":  { "clue": "Life Sciences Institute, for short", "answer": "LSI" },
+      "3":  { "clue": "Robert ___’s group at UBC (two words)", "answer": "MOLDAYLAB" },
+      "4":  { "clue": "Peripherin-2 gene symbol", "answer": "PRPH2" },
+      "5":  { "clue": "Pigment protein in rods", "answer": "RHODOPSIN" },
+      "6":  { "clue": "Cyclic nucleotide-gated conduit (two words)", "answer": "CNGCHANNEL" },
+      "7":  { "clue": "Alternate name for PRPH2 (protein)", "answer": "PERIPHERIN" },
+      "8":  { "clue": "Glutamic acid–rich protein (abbr+digit)", "answer": "GARP2" },
+      "9":  { "clue": "Fast proximity biotinylation tag from BioID family", "answer": "TURBOID" },
+      "10": { "clue": "Structure predictor from DeepMind", "answer": "ALPHAFOLD" },
+      "11": { "clue": "Classic modeling suite from Baker lab", "answer": "ROSETTA" },
+      "12": { "clue": "Photoreceptor compartment where discs stack (two words)", "answer": "OUTERSEGMENT" },
+      "13": { "clue": "Blue-stained gel readout (abbr)", "answer": "SDSPAGE" },
+      "14": { "clue": "Common blue dye for total protein", "answer": "COOMASSIE" },
+      "15": { "clue": "Disc-like lipid bilayer particle used for reconstitution", "answer": "NANODISC" }
+    },
+    "down": {
+      "1":  { "clue": "Campus in British Columbia, for short", "answer": "UBC" },
+      "2":  { "clue": "Research ___ (funding unit)", "answer": "DEPARTMENT" },
+      "3":  { "clue": "Institute on UBC campus (abbr)", "answer": "LSI" },
+      "4":  { "clue": "Photoreceptor membrane site (abbr)", "answer": "OS" },
+      "5":  { "clue": "Gene partnering with PRPH2", "answer": "ROM1" },
+      "6":  { "clue": "Method family including TurboID", "answer": "BIOID" },
+      "7":  { "clue": "Light-sensing cell", "answer": "ROD" },
+      "8":  { "clue": "Ion type carried by CNG (abbr)", "answer": "NA" },
+      "9":  { "clue": "Grid computation tool from DeepMind", "answer": "AI" },
+      "10": { "clue": "Protein design suite (short)", "answer": "ROS" },
+      "11": { "clue": "Where discs stack (abbr)", "answer": "OS" },
+      "12": { "clue": "Electrophoresis readout (abbr)", "answer": "SDS" },
+      "13": { "clue": "Common total-protein dye (short)", "answer": "DYE" },
+      "14": { "clue": "Reconstitution particle (short)", "answer": "DISC" },
+      "15": { "clue": "Lipid vesicle cousin (short)", "answer": "NANO" }
+    }
+  },
+  "solutionRows": [
+    "UBCDEPARTMENT##",
+    "##LSI##########",
+    "MOLDAYLAB######",
+    "PRPH2##########",
+    "RHODOPSIN######",
+    "CNGCHANNEL#####",
+    "PERIPHERIN#####",
+    "GARP2##########",
+    "TURBOID########",
+    "ALPHAFOLD######",
+    "ROSETTA########",
+    "OUTERSEGMENT##",
+    "SDSPAGE########",
+    "COOMASSIE######",
+    "NANODISC#######"
+  ]
 }
