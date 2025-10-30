@@ -77,14 +77,14 @@ function stopTimer(){
   if (timerHandle) { clearInterval(timerHandle); timerHandle = null; }
 }
 
-// Server calls
 async function post(action, payload){
   const res = await fetch(CONFIG.api, {
-    method:"POST",
-    headers:{ "Content-Type":"application/json" },
+    method: "POST",
+    // Use a "simple" content type to avoid preflight
+    headers: { "Content-Type": "text/plain;charset=utf-8" },
     body: JSON.stringify({ action, ...payload })
   });
-  const data = await res.json().catch(()=> ({}));
+  const data = await res.json().catch(() => ({}));
   if (!res.ok || data.ok === false) {
     const msg = (data && data.error) ? data.error : res.statusText;
     throw new Error(`API ${action} failed: ${msg}`);
