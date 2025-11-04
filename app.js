@@ -175,6 +175,7 @@ function buildGrid(layout){
 
   S("grid").innerHTML = "";
   S("grid").appendChild(table);
+  applyResponsiveCellSize(puzzle.rows, puzzle.cols);
 
   // render clues
   renderClues(puzzle);
@@ -182,6 +183,25 @@ function buildGrid(layout){
   // focus the first open cell and highlight its word
   const firstOpen = document.querySelector('.grid td:not(.block) input');
   if (firstOpen){ firstOpen.focus(); setActiveWord(puzzle, +firstOpen.dataset.r, +firstOpen.dataset.c); }
+}
+
+// Compute the largest square cell that fits both width and height.
+// Respects mobile keyboard because it uses window.innerHeight at the moment.
+function applyResponsiveCellSize(rows, cols) {
+  // Horizontal limit: fit grid in ~96vw
+  const availW = Math.min(document.documentElement.clientWidth, window.innerWidth) * 0.96;
+  const maxCellByW = Math.floor(availW / cols);
+
+  // Vertical limit: leave space for timer/controls/current clue on phones
+  const header = 56;        // timer + padding
+  const controls = 88;      // buttons row
+  const clueBar = 64;       // current-clue box on mobile
+  const vPad = 24;          // margins
+  const availH = Math.max(200, window.innerHeight - header - controls - clueBar - vPad);
+  const maxCellByH = Math.floor(availH / rows);
+
+  const cell = Math.max(20, Math.min(maxCellByW, maxCellByH)); // clamp for sanity
+  document.documentElement.style.setProperty('--cell', cell + 'px');
 }
 
 function readGridString(){
@@ -342,6 +362,17 @@ async function init(){
     // Don’t block Begin; we’ll try again when Begin is clicked
     console.warn("Preload failed:", e.message);
   }
+
+  window.addEventListener('resize', () => {
+  if (puzzle) applyResponsiveCellSize(puzzle.rows, puzzle.cols);
+});
+
+// (Optional) re-apply when focusing inputs (helps when keyboard pops)
+document.addEventListener('focusin', (e) => {
+  if (e.target && e.target.tagName === 'INPUT' && puzzle) {
+    applyResponsiveCellSize(puzzle.rows, puzzle.cols);
+  }
+});
 
   // Wire buttons (this is crucial—if IDs don’t match, nothing happens)
   S("btn-begin").onclick = beginFlow;
