@@ -43,6 +43,7 @@ html, body { -webkit-text-size-adjust: 100%; }   /* prevent iOS “helpful” zo
   background: transparent;
   text-align: center;
   text-transform: uppercase;
+  caret-color: transparent;         /* hides the cursor */
 
   /* tie text metrics to cell size so it stays centered & square */
   font-weight: 700;
@@ -314,6 +315,8 @@ html, body { -webkit-text-size-adjust: 100%; }
   line-height: var(--cell);
   letter-spacing: 0.4px;        /* slightly tighter */
   -webkit-appearance:none;
+  caret-color: transparent;         /* hides the cursor */
+
 }
 
 /* Word highlight + focused cell (unchanged) */
@@ -376,6 +379,8 @@ html, body { -webkit-text-size-adjust: 100%; }
   line-height: var(--cell);
   letter-spacing: 0.4px;        /* slightly tighter */
   -webkit-appearance:none;
+  caret-color: transparent;         /* hides the cursor */
+
 }
 
 /* Hide side clue list on phones; show only current clue */
@@ -403,4 +408,8 @@ html, body { -webkit-text-size-adjust: 100%; }
   font-size: 14px;              /* smaller than before */
   line-height: 1.35;
   margin: 8px 0 6px;            /* above the buttons now */
+}
+/* Also prevent selection highlight from showing */
+.grid td input::selection {
+  background: transparent;
 }
