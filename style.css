@@ -281,3 +281,97 @@ html, body { -webkit-text-size-adjust: 100%; }   /* prevent iOS “helpful” zo
   box-sizing: border-box;          /* borders don’t change size */
 }
 .grid td.block { background:#222; border-color:#222; }
+
+/* Prevent iOS auto-zoom and text inflation */
+html, body { -webkit-text-size-adjust: 100%; }
+
+/* Hide title everywhere (or wrap in a media query if you only want it hidden on phones) */
+#title { display: none; }
+
+/* Square cells controlled by --cell (your JS sets this) */
+:root { --cell: 34px; } /* fallback; JS overwrites */
+.grid { table-layout: fixed; border-collapse: collapse; }
+.grid td {
+  width: var(--cell);
+  height: var(--cell);
+  padding: 0;
+  border: 1px solid #9aa0a6;
+  background: #fff;
+  box-sizing: border-box;
+}
+.grid td.block { background:#222; border-color:#222; }
+
+/* Inputs: keep font-size >= 16px to stop iOS focus-zoom, but tie to cell size */
+.grid td input {
+  width: 100%; height: 100%;
+  margin: 0; padding: 0; border: 0; outline: none;
+  background: transparent; text-align: center; text-transform: uppercase;
+  font-weight: 700;
+  font-size: max(16px, calc(var(--cell) * 0.52));  /* never <16px to avoid zoom */
+  line-height: var(--cell);
+  letter-spacing: 0.5px;
+  -webkit-appearance: none;
+}
+
+/* Word highlight + focused cell (unchanged) */
+.grid td.active { background: #fff6c2; }
+.grid td.active.block { background: #222; }
+.grid td.cursor { background:#ffe38f; box-shadow: inset 0 0 0 2px #1d4ed8; z-index:1; }
+.grid td .num { position:absolute; top:2px; left:3px; font-size:10px; color:#444; }
+
+/* Smaller buttons */
+.controls { margin-top: 8px; display:flex; gap:6px; }
+.controls button {
+  padding: 8px 10px;         /* smaller */
+  font-size: 14px;           /* smaller */
+  line-height: 1.1;
+}
+
+/* Mobile layout: clues hidden, current clue shown, grid fills under keyboard */
+@media (max-width: 800px) {
+  .cluewrap { display: none; }
+  #puzzle { width: 96vw; margin: 0 auto; }
+  .grid { width: 100%; }
+  .current-clue {
+    display: block;
+    background: #fef9c3;
+    border: 1px solid #d6a700;
+    border-radius: 6px;
+    padding: 6px 8px;
+    font-size: 15px;
+    width: 96%;
+    margin: 6px auto 8px;
+    box-sizing: border-box;
+  }
+}
+/* Full-bleed mobile width, respect notches */
+#puzzle { margin: 0; padding: 0; }
+#grid-wrap {
+  width: 100svw;                 /* small-viewport width (iOS-friendly) */
+  max-width: 100svw;
+  margin: 0 auto;
+  overflow: hidden;
+  /* height is set by JS; we keep it empty here */
+}
+
+.grid { width: 100%; table-layout: fixed; border-collapse: collapse; }
+
+/* Cells stay squares via --cell (set by JS) */
+:root { --cell: 32px; }
+.grid td { width: var(--cell); height: var(--cell); box-sizing: border-box; }
+.grid td.block { background:#222; border-color:#222; }
+
+/* Inputs: prevent iOS focus-zoom, tie to cell size */
+.grid td input{
+  width:100%; height:100%; border:0; outline:0; padding:0; margin:0;
+  background:transparent; text-align:center; text-transform:uppercase;
+  font-weight:700; line-height: var(--cell);
+  font-size: max(16px, calc(var(--cell) * 0.52));
+  -webkit-appearance:none;
+}
+
+/* Hide side clue list on phones; show only current clue */
+@media (max-width: 800px){
+  .cluewrap{ display:none; }
+  .current-clue{ display:block; width: 94svw; margin: 8px auto; }
+}
