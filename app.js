@@ -187,20 +187,30 @@ function buildGrid(layout){
 
 // Compute the largest square cell that fits both width and height.
 // Respects mobile keyboard because it uses window.innerHeight at the moment.
+// Compute largest square cell that fits inside #grid-wrap, respecting keyboard.
 function applyResponsiveCellSize(rows, cols) {
-  // Horizontal limit: fit grid in ~96vw
-  const availW = Math.min(document.documentElement.clientWidth, window.innerWidth) * 0.96;
-  const maxCellByW = Math.floor(availW / cols);
+  const wrap = document.getElementById('grid-wrap') || S('grid');
+  if (!wrap) return;
 
-  // Vertical limit: leave space for timer/controls/current clue on phones
-  const header = 56;        // timer + padding
-  const controls = 88;      // buttons row
-  const clueBar = 64;       // current-clue box on mobile
-  const vPad = 24;          // margins
-  const availH = Math.max(200, window.innerHeight - header - controls - clueBar - vPad);
+  // Visible viewport height (accounts for iOS keyboard via visualViewport)
+  const vh = (window.visualViewport ? window.visualViewport.height : window.innerHeight);
+  // Expose to CSS for any calc() fallbacks
+  document.documentElement.style.setProperty('--vhAvail', vh + 'px');
+
+  // Horizontal limit
+  const wrapW = Math.min(wrap.clientWidth || wrap.offsetWidth || 0, document.documentElement.clientWidth * 0.96);
+  const maxCellByW = Math.floor(wrapW / cols);
+
+  // Vertical limit: give space for title/timer/controls/current-clue
+  // Measure available height inside wrapper’s parent
+  const rect = wrap.getBoundingClientRect();
+  const safeTop = 8;                 // small padding
+  const uiReserve = 150;             // approx for controls + clue box
+  const availH = Math.max(180, vh - rect.top - uiReserve - safeTop);
+  wrap.style.maxHeight = availH + 'px';
   const maxCellByH = Math.floor(availH / rows);
 
-  const cell = Math.max(20, Math.min(maxCellByW, maxCellByH)); // clamp for sanity
+  const cell = Math.max(18, Math.min(maxCellByW, maxCellByH)); // clamp
   document.documentElement.style.setProperty('--cell', cell + 'px');
 }
 
@@ -363,18 +373,7 @@ async function init(){
     console.warn("Preload failed:", e.message);
   }
 
-  window.addEventListener('resize', () => {
-  if (puzzle) applyResponsiveCellSize(puzzle.rows, puzzle.cols);
-});
-
-// (Optional) re-apply when focusing inputs (helps when keyboard pops)
-document.addEventListener('focusin', (e) => {
-  if (e.target && e.target.tagName === 'INPUT' && puzzle) {
-    applyResponsiveCellSize(puzzle.rows, puzzle.cols);
-  }
-});
-
-  // Wire buttons (this is crucial—if IDs don’t match, nothing happens)
+    // Wire buttons (this is crucial—if IDs don’t match, nothing happens)
   S("btn-begin").onclick = beginFlow;
   S("toggle").onclick = ()=>{
     isAcross = !isAcross;
@@ -387,6 +386,24 @@ document.addEventListener('focusin', (e) => {
   };
   S("clear-word").onclick = clearCurrentWord;
   S("submit").onclick = submitFlow;
+
+  window.addEventListener('resize', () => {
+  if (puzzle) applyResponsiveCellSize(puzzle.rows, puzzle.cols);
+});
+
+    // iOS keyboard / zoom changes — handles viewport shrinking when keyboard appears
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', () => {
+      if (puzzle) applyResponsiveCellSize(puzzle.rows, puzzle.cols);
+    });
+  }
+
+// (Optional) re-apply when focusing inputs (helps when keyboard pops)
+document.addEventListener('focusin', (e) => {
+  if (e.target && e.target.tagName === 'INPUT' && puzzle) {
+    applyResponsiveCellSize(puzzle.rows, puzzle.cols);
+  }
+});
 
   console.log("App initialized");
 }
