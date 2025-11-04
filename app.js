@@ -147,6 +147,17 @@ function buildGrid(layout){
         inp.maxLength = 1;
         inp.dataset.r = r; inp.dataset.c = c;
 
+                // typing attributes to discourage QuickType/Autofill bars
+        inp.setAttribute('type', 'text');         // explicit text field
+        inp.setAttribute('inputmode', 'text');    // plain keyboard
+        inp.setAttribute('autocomplete', 'off');  // no suggestions, no stored creds
+        inp.setAttribute('autocorrect', 'off');   // iOS autocorrect off
+        inp.setAttribute('autocapitalize', 'none');
+        inp.setAttribute('spellcheck', 'false');
+        
+        // give each input a unique, non-credential-like name
+        inp.setAttribute('name', `cell_${r}_${c}`);
+
         // highlight on focus
         inp.addEventListener("focus", () => {
           setActiveWord(puzzle, r, c);
