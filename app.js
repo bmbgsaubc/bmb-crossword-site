@@ -5,6 +5,7 @@ let attemptId = null;
 let isAcross = true;
 let timerHandle = null;
 let msElapsed = 0;
+let lastFocusedInput = null;
 
 function logErr(msg, err){
   console.error(msg, err || "");
@@ -151,6 +152,7 @@ function buildGrid(layout){
           setActiveWord(puzzle, r, c);
           setFocusCell(r, c);
         });
+        inp.addEventListener('focus', () => { lastFocusedInput = inp; setActiveWord(puzzle, r, c); });
         // move forward within active word on entry
         inp.addEventListener("input", (e) => {
           const v = e.target.value.toUpperCase().replace(/[^A-Z]/g,"");
@@ -175,8 +177,8 @@ function buildGrid(layout){
 
   S("grid").innerHTML = "";
   S("grid").appendChild(table);
-  applyResponsiveCellSize(puzzle.rows, puzzle.cols);
-
+  // In buildGrid(), after S("grid").appendChild(table);
+  applyPhoneWidthSizing(puzzle.rows, puzzle.cols);
   // render clues
   renderClues(puzzle);
 
@@ -189,29 +191,42 @@ function buildGrid(layout){
 // Respects mobile keyboard because it uses window.innerHeight at the moment.
 // Compute largest square cell that fits inside #grid-wrap, respecting keyboard.
 function applyResponsiveCellSize(rows, cols) {
+  const availW = Math.min(document.documentElement.clientWidth, window.innerWidth) * 0.96;
+  const maxCellByW = Math.floor(availW / cols);
+
+  const header = 50;     // timer etc.
+  const controls = 60;   // smaller buttons now
+  const clueBar = 56;    // current clue
+  const vPad = 20;
+
+  const vh = (window.visualViewport ? window.visualViewport.height : window.innerHeight);
+  const availH = Math.max(180, vh - header - controls - clueBar - vPad);
+  const maxCellByH = Math.floor(availH / rows);
+
+  const cell = Math.max(20, Math.min(maxCellByW, maxCellByH));
+  document.documentElement.style.setProperty('--cell', cell + 'px');
+}
+
+// Fit the board to the phone width; make the board square (height == width)
+// Cells remain squares; for 15x15 this fills the whole square perfectly.
+function applyPhoneWidthSizing(rows, cols) {
   const wrap = document.getElementById('grid-wrap') || S('grid');
   if (!wrap) return;
 
-  // Visible viewport height (accounts for iOS keyboard via visualViewport)
-  const vh = (window.visualViewport ? window.visualViewport.height : window.innerHeight);
-  // Expose to CSS for any calc() fallbacks
-  document.documentElement.style.setProperty('--vhAvail', vh + 'px');
+  // Use the visible viewport width when available (handles iOS UI chrome)
+  const vw = window.visualViewport ? window.visualViewport.width : window.innerWidth;
+  const wrapW = Math.floor(vw); // exact phone width in CSS px
 
-  // Horizontal limit
-  const wrapW = Math.min(wrap.clientWidth || wrap.offsetWidth || 0, document.documentElement.clientWidth * 0.96);
-  const maxCellByW = Math.floor(wrapW / cols);
+  // Cell size from width constraint
+  const cell = Math.max(18, Math.floor(wrapW / cols)); // clamp min for readability
 
-  // Vertical limit: give space for title/timer/controls/current-clue
-  // Measure available height inside wrapper’s parent
-  const rect = wrap.getBoundingClientRect();
-  const safeTop = 8;                 // small padding
-  const uiReserve = 150;             // approx for controls + clue box
-  const availH = Math.max(180, vh - rect.top - uiReserve - safeTop);
-  wrap.style.maxHeight = availH + 'px';
-  const maxCellByH = Math.floor(availH / rows);
-
-  const cell = Math.max(18, Math.min(maxCellByW, maxCellByH)); // clamp
+  // Set CSS var and container dimensions
   document.documentElement.style.setProperty('--cell', cell + 'px');
+  wrap.style.width  = wrapW + 'px';
+  wrap.style.height = wrapW + 'px';  // square board: height matches width
+
+  // If your puzzle isn't square (rows != cols), cells stay square; you'll see
+  // extra blank space below or right. For 15x15 it's a perfect fill.
 }
 
 function readGridString(){
@@ -387,16 +402,25 @@ async function init(){
   S("clear-word").onclick = clearCurrentWord;
   S("submit").onclick = submitFlow;
 
+  // In init():
   window.addEventListener('resize', () => {
-  if (puzzle) applyResponsiveCellSize(puzzle.rows, puzzle.cols);
-});
-
-    // iOS keyboard / zoom changes — handles viewport shrinking when keyboard appears
+    if (puzzle) applyPhoneWidthSizing(puzzle.rows, puzzle.cols);
+  });
   if (window.visualViewport) {
     window.visualViewport.addEventListener('resize', () => {
-      if (puzzle) applyResponsiveCellSize(puzzle.rows, puzzle.cols);
+      if (puzzle) applyPhoneWidthSizing(puzzle.rows, puzzle.cols);
     });
   }
+
+  // On mobile, if the user taps empty space, keep focus on the last cell to keep the keyboard up.
+document.addEventListener('pointerdown', (e) => {
+  const t = e.target;
+  const isInput = t && t.tagName === 'INPUT';
+  if (!isInput && lastFocusedInput) {
+    e.preventDefault();
+    lastFocusedInput.focus();
+  }
+}, { passive: false });
 
 // (Optional) re-apply when focusing inputs (helps when keyboard pops)
 document.addEventListener('focusin', (e) => {
