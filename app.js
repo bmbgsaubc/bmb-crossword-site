@@ -12,30 +12,165 @@ function logErr(msg, err){
   if (el) el.textContent = msg;
 }
 
+// Numbering + lookups
+let cellNum = [];          // cellNum[r][c] = number or 0
+let acrossMap = {};        // number -> {cells:[{r,c}], clue}
+let downMap = {};          // number -> {cells:[{r,c}], clue}
+
+// Find a clue text by number/kind
+function findClue(p, kind, num){
+  const bag = (kind === "across") ? (p.clues?.across || {}) : (p.clues?.down || {});
+  const keyA = String(num) + (kind === "across" ? "A" : "D");
+  const keyB = String(num);
+  return bag[keyA] || bag[keyB] || "";
+}
+
+// Build numbering and word maps
+function computeNumbering(p){
+  const R = p.layout.length, C = p.layout[0].length;
+  const isOpen = (r,c)=> r>=0 && r<R && c>=0 && c<C && p.layout[r][c] !== "#";
+  cellNum = Array.from({length:R},()=>Array(C).fill(0));
+  acrossMap = {}; downMap = {};
+  let n = 0;
+
+  for (let r=0;r<R;r++){
+    for (let c=0;c<C;c++){
+      if (!isOpen(r,c)) continue;
+      const startAcross = !isOpen(r, c-1);
+      const startDown   = !isOpen(r-1, c);
+      if (startAcross || startDown){ n++; cellNum[r][c] = n; }
+      if (startAcross){
+        const cells = []; let cc=c; while (isOpen(r,cc)) { cells.push({r, c:cc}); cc++; }
+        acrossMap[n] = { cells, clue: findClue(p, "across", n) };
+      }
+      if (startDown){
+        const cells = []; let rr=r; while (isOpen(rr,c)) { cells.push({r:rr, c}); rr++; }
+        downMap[n] = { cells, clue: findClue(p, "down", n) };
+      }
+    }
+  }
+}
+
+function getWordCells(p, r, c, isAcross){
+  const R = p.layout.length, C = p.layout[0].length;
+  const isOpen = (r,c)=> r>=0 && r<R && c>=0 && c<C && p.layout[r][c] !== "#";
+  if (!isOpen(r,c)) return [];
+  const cells = [];
+  if (isAcross){ let c0=c; while (isOpen(r,c0-1)) c0--; let c1=c; while (isOpen(r,c1+1)) c1++; for (let x=c0;x<=c1;x++) cells.push({r,c:x}); }
+  else { let r0=r; while (isOpen(r0-1,c)) r0--; let r1=r; while (isOpen(r1+1,c)) r1++; for (let y=r0;y<=r1;y++) cells.push({r:y,c}); }
+  return cells;
+}
+
+function headNumber(p, r, c){
+  const isOpen = (r,c)=> p.layout[r] && p.layout[r][c] && p.layout[r][c] !== "#";
+  if (isAcross){ while (isOpen(r,c-1)) c--; } else { while (isOpen(r-1,c)) r--; }
+  return cellNum[r]?.[c] || 0;
+}
+
+function setActiveWord(p, r, c){
+  document.querySelectorAll(".grid td.active").forEach(td=>td.classList.remove("active"));
+  const cells = getWordCells(p, r, c, isAcross);
+  cells.forEach(({r,c})=>{
+    const td = document.querySelector(`td[data-r="${r}"][data-c="${c}"]`);
+    if (td) td.classList.add("active");
+  });
+  const num = cellNum[r]?.[c] || headNumber(p, r, c);
+  const map = isAcross ? acrossMap : downMap;
+  const clue = (num && map[num]) ? map[num].clue : "";
+  const arrow = isAcross ? "Across" : "Down";
+  S("current-clue").textContent = clue ? `${num} ${arrow}: ${clue}` : "";
+}
+
+function renderClues(p){
+  const a = S("clues-across"), d = S("clues-down");
+  if (a) a.innerHTML = ""; if (d) d.innerHTML = "";
+  Object.keys(acrossMap).map(Number).sort((x,y)=>x-y).forEach(n=>{
+    const li = document.createElement("li");
+    li.textContent = `${n}. ${acrossMap[n].clue || ""}`;
+    li.onclick = ()=>{
+      const head = acrossMap[n].cells[0];
+      const inp = document.querySelector(`input[data-r="${head.r}"][data-c="${head.c}"]`);
+      if (inp){ isAcross = true; inp.focus(); setActiveWord(p, head.r, head.c); }
+    };
+    a.appendChild(li);
+  });
+  Object.keys(downMap).map(Number).sort((x,y)=>x-y).forEach(n=>{
+    const li = document.createElement("li");
+    li.textContent = `${n}. ${downMap[n].clue || ""}`;
+    li.onclick = ()=>{
+      const head = downMap[n].cells[0];
+      const inp = document.querySelector(`input[data-r="${head.r}"][data-c="${head.c}"]`);
+      if (inp){ isAcross = false; inp.focus(); setActiveWord(p, head.r, head.c); }
+    };
+    d.appendChild(li);
+  });
+}
+
 function buildGrid(layout){
   const rows = layout.length; const cols = layout[0].length;
+
+  // compute numbering/maps once per build
+  computeNumbering(puzzle);
+
   const table = document.createElement("table");
   table.className = "grid";
+
   for (let r=0;r<rows;r++){
     const tr = document.createElement("tr");
     for (let c=0;c<cols;c++){
       const td = document.createElement("td");
-      const ch = layout[r][c];
-      if (ch === "#") {
+      td.dataset.r = r; td.dataset.c = c;
+
+      if (layout[r][c] === "#") {
         td.className = "block";
       } else {
+        // numbering
+        const n = cellNum[r][c];
+        if (n) {
+          const num = document.createElement("span");
+          num.className = "num";
+          num.textContent = n;
+          td.appendChild(num);
+        }
+        // input
         const inp = document.createElement("input");
         inp.maxLength = 1;
         inp.dataset.r = r; inp.dataset.c = c;
-        tr.tabIndex = -1; // avoid focus outline on row
+
+        // highlight on focus
+        inp.addEventListener("focus", () => setActiveWord(puzzle, r, c));
+
+        // move forward within active word on entry
+        inp.addEventListener("input", (e) => {
+          const v = e.target.value.toUpperCase().replace(/[^A-Z]/g,"");
+          e.target.value = v;
+          if (v) {
+            const cells = getWordCells(puzzle, r, c, isAcross);
+            let idx = cells.findIndex(k=>k.r===r && k.c===c);
+            const next = cells[idx+1];
+            if (next) {
+              const nxt = document.querySelector(`input[data-r="${next.r}"][data-c="${next.c}"]`);
+              if (nxt) nxt.focus();
+            }
+          }
+        });
+
         td.appendChild(inp);
       }
       tr.appendChild(td);
     }
     table.appendChild(tr);
   }
+
   S("grid").innerHTML = "";
   S("grid").appendChild(table);
+
+  // render clues
+  renderClues(puzzle);
+
+  // focus the first open cell and highlight its word
+  const firstOpen = document.querySelector('.grid td:not(.block) input');
+  if (firstOpen){ firstOpen.focus(); setActiveWord(puzzle, +firstOpen.dataset.r, +firstOpen.dataset.c); }
 }
 
 function readGridString(){
@@ -199,7 +334,13 @@ async function init(){
 
   // Wire buttons (this is crucial—if IDs don’t match, nothing happens)
   S("btn-begin").onclick = beginFlow;
-  S("toggle").onclick = ()=>{ isAcross = !isAcross; };
+  S("toggle").onclick = ()=>{
+    isAcross = !isAcross;
+    const f = document.activeElement;
+    if (f && f.tagName === "INPUT") {
+      setActiveWord(puzzle, +f.dataset.r, +f.dataset.c);
+    }
+  };  
   S("clear-word").onclick = clearCurrentWord;
   S("submit").onclick = submitFlow;
 
