@@ -69,3 +69,74 @@ button { padding: 8px 12px; }
 .cluewrap ol { margin: 0; padding-left: 24px; max-height: 260px; overflow: auto; }
 .cluewrap li { margin: 2px 0; font-size: 14px; cursor: pointer; }
 .current-clue { text-align: center; margin: 10px auto; font-weight: 600; }
+/* Whole-word highlight (already present, keep it) */
+.grid td.active { background: #fff6c2; }     /* light yellow */
+.grid td.active.block { background: #222; }
+
+/* Focused cell: stronger box + slightly richer fill.
+   Use box-shadow so borders don't reflow the table. */
+.grid td.cursor {
+  background: #ffe38f;                        /* a bit deeper than .active */
+  box-shadow:
+    inset 0 0 0 2px #d97706,                  /* thick inner line (amber) */
+    0 0 0 1px transparent;                    /* keeps Chrome from collapsing */
+  position: relative;                         /* ensure stacking for shadow */
+  z-index: 1;                                 /* draws over neighbors */
+}
+
+/* Optional: make the letter stand out in the focused cell */
+.grid td.cursor input {
+  font-weight: 700;
+}
+/* -------------------------------
+   📱  Mobile layout adjustments
+--------------------------------*/
+@media (max-width: 700px) {
+  /* Scale the grid to fit width while keeping it readable */
+  .grid {
+    width: 95vw;                /* fit screen */
+    height: auto;
+    table-layout: fixed;
+    transform-origin: top center;
+  }
+
+  .grid td {
+    width: calc(95vw / 15);     /* assuming a 15x15 grid; adjust dynamically if needed */
+    height: calc(95vw / 15);
+  }
+
+  /* Hide full clue lists */
+  .cluewrap {
+    display: none;
+  }
+
+  /* Keep only current clue visible */
+  .current-clue {
+    display: block;
+    background: #fef9c3;         /* subtle highlight */
+    border: 1px solid #d6a700;
+    border-radius: 6px;
+    padding: 6px 8px;
+    font-size: 15px;
+    line-height: 1.4;
+    margin: 10px auto;
+    width: 95%;
+    box-sizing: border-box;
+  }
+
+  /* Make buttons larger for touch */
+  .controls button {
+    flex: 1;
+    padding: 12px;
+    font-size: 16px;
+  }
+
+  /* Center timer and reduce top padding */
+  .timer {
+    position: fixed;
+    top: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 20;
+  }
+}
