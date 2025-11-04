@@ -203,3 +203,57 @@ button { padding: 8px 12px; }
   z-index: 1;
 }
 .grid td .num { position:absolute; top:2px; left:3px; font-size:10px; color:#444; }
+
+/* ===== Desktop: clues on the right ===== */
+.play {
+  display: grid;
+  grid-template-columns: auto 320px;
+  gap: 20px;
+  align-items: start;
+}
+#grid-wrap { max-width: calc(var(--cell, 36px) * 15); } /* safety */
+
+/* ===== Mobile layout ===== */
+@media (max-width: 800px) {
+  :root { --cell: 32px; }              /* fallback; JS will override */
+
+  body { padding: 6px; }               /* tighter margins on phone */
+  .play { display: block; }
+  .cluewrap { display: none; }         /* hide full lists on phone */
+
+  /* The grid wrapper takes almost the whole visible viewport. */
+  #grid-wrap {
+    width: 96vw;                       /* nearly full-width */
+    margin: 4px auto 8px;
+    /* Height will be set by JS via --vhAvail, but constrain in CSS too: */
+    max-height: calc(var(--vhAvail, 70vh) - 160px); /* header/controls/clue room */
+    overflow: hidden;                   /* keep it snug */
+  }
+
+  /* Square cells computed via --cell */
+  .grid { width: 100%; border-collapse: collapse; table-layout: fixed; }
+  .grid td { width: var(--cell); height: var(--cell); }
+
+  /* Only the active clue shows on phone */
+  .current-clue {
+    display: block;
+    background: #fef9c3;
+    border: 1px solid #d6a700;
+    border-radius: 6px;
+    padding: 6px 8px;
+    font-size: 15px;
+    line-height: 1.35;
+    width: 96%;
+    margin: 6px auto 10px;
+    box-sizing: border-box;
+  }
+
+  .controls { gap: 8px; }
+  .controls button { flex: 1; padding: 12px; font-size: 16px; }
+}
+
+/* Word + focus styling (from earlier) */
+.grid td.active { background: #fff6c2; }
+.grid td.active.block { background: #222; }
+.grid td.cursor { background: #ffe38f; box-shadow: inset 0 0 0 2px #1d4ed8; z-index: 1; }
+.grid td .num { position:absolute; top:2px; left:3px; font-size:10px; color:#444; }
