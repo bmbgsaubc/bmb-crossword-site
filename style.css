@@ -9,7 +9,7 @@ main { max-width: 900px; margin: 0 auto; }
 .grid td { width: 36px; height: 36px; border: 1px solid #bbb; text-align: center; padding: 0; }
 .grid td.block { background: #333; }
 .grid input { width: 100%; height: 100%; border: none; text-transform: uppercase; text-align: center; font-size: 18px; }
-.controls { margin-top: 12px; display: flex; gap: 8px; }
+.controls { margin-top: 8px; display: flex; gap: 6px; }
 input { padding: 8px; margin-right: 8px; }
 button { padding: 8px 12px; }
 /* Make each cell a square with visible grid lines */
@@ -48,7 +48,7 @@ html, body { -webkit-text-size-adjust: 100%; }   /* prevent iOS “helpful” zo
   font-weight: 700;
   font-size: calc(var(--cell) * 0.5);  /* shrink text on small cells */
   line-height: var(--cell);
-  letter-spacing: 0.5px;
+  letter-spacing: 0.4px;
 
   /* iOS quirks */
   -webkit-appearance: none;
@@ -138,8 +138,10 @@ html, body { -webkit-text-size-adjust: 100%; }   /* prevent iOS “helpful” zo
   /* Make buttons larger for touch */
   .controls button {
     flex: 1;
-    padding: 12px;
-    font-size: 16px;
+    padding: 6px 10px;     /* smaller */
+    font-size: 13px;       /* smaller */
+    line-height: 1.1;
+    border-radius: 6px;
   }
 
   /* Center timer and reduce top padding */
@@ -190,10 +192,9 @@ html, body { -webkit-text-size-adjust: 100%; }   /* prevent iOS “helpful” zo
     border: 1px solid #d6a700;
     border-radius: 6px;
     padding: 6px 8px;
-    font-size: 15px;
+    font-size: 12px;
     line-height: 1.35;
-    width: 96%;
-    box-sizing: border-box;
+    margin: 8px 0 6px;
   }
 
   /* Let the grid fill the width nicely */
@@ -201,7 +202,7 @@ html, body { -webkit-text-size-adjust: 100%; }   /* prevent iOS “helpful” zo
   .grid { width: 100%; }
 
   /* Touch-friendly buttons */
-  .controls button { flex: 1; padding: 12px; font-size: 16px; }
+  .controls button { flex: 1; padding: 6px 8px; font-size: 12px; }
 }
 
 /* ===== Word highlight + focused cell (from earlier step) ===== */
@@ -302,15 +303,17 @@ html, body { -webkit-text-size-adjust: 100%; }
 .grid td.block { background:#222; border-color:#222; }
 
 /* Inputs: keep font-size >= 16px to stop iOS focus-zoom, but tie to cell size */
-.grid td input {
-  width: 100%; height: 100%;
-  margin: 0; padding: 0; border: 0; outline: none;
-  background: transparent; text-align: center; text-transform: uppercase;
-  font-weight: 700;
-  font-size: max(16px, calc(var(--cell) * 0.52));  /* never <16px to avoid zoom */
+/* Cell size comes from --cell; leave that as-is. Only change text sizing. */
+.grid td input{
+  width:100%; height:100%;
+  margin:0; padding:0; border:0; outline:0;
+  background:transparent; text-align:center; text-transform:uppercase;
+  font-weight:700;
+  /* ↓ smaller letters; still >=16px to avoid iOS zoom */
+  font-size: max(16px, calc(var(--cell) * 0.45));
   line-height: var(--cell);
-  letter-spacing: 0.5px;
-  -webkit-appearance: none;
+  letter-spacing: 0.4px;        /* slightly tighter */
+  -webkit-appearance:none;
 }
 
 /* Word highlight + focused cell (unchanged) */
@@ -362,11 +365,16 @@ html, body { -webkit-text-size-adjust: 100%; }
 .grid td.block { background:#222; border-color:#222; }
 
 /* Inputs: prevent iOS focus-zoom, tie to cell size */
+/* Cell size comes from --cell; leave that as-is. Only change text sizing. */
 .grid td input{
-  width:100%; height:100%; border:0; outline:0; padding:0; margin:0;
+  width:100%; height:100%;
+  margin:0; padding:0; border:0; outline:0;
   background:transparent; text-align:center; text-transform:uppercase;
-  font-weight:700; line-height: var(--cell);
-  font-size: max(16px, calc(var(--cell) * 0.52));
+  font-weight:700;
+  /* ↓ smaller letters; still >=16px to avoid iOS zoom */
+  font-size: max(16px, calc(var(--cell) * 0.45));
+  line-height: var(--cell);
+  letter-spacing: 0.4px;        /* slightly tighter */
   -webkit-appearance:none;
 }
 
@@ -374,4 +382,25 @@ html, body { -webkit-text-size-adjust: 100%; }
 @media (max-width: 800px){
   .cluewrap{ display:none; }
   .current-clue{ display:block; width: 94svw; margin: 8px auto; }
+}
+
+/* Mobile: a touch smaller still (optional) */
+@media (max-width: 800px) {
+  .controls { gap: 6px; }
+  .controls button {
+    padding: 6px 8px;
+    font-size: 12.5px;
+  }
+}
+
+/* Hint box styling sits right above the buttons */
+.current-clue {
+  display: block;               /* visible on mobile; desktop OK too */
+  background: #fef9c3;
+  border: 1px solid #d6a700;
+  border-radius: 6px;
+  padding: 6px 8px;
+  font-size: 14px;              /* smaller than before */
+  line-height: 1.35;
+  margin: 8px 0 6px;            /* above the buttons now */
 }
