@@ -74,6 +74,7 @@ function setActiveWord(p, r, c){
     const td = document.querySelector(`td[data-r="${r}"][data-c="${c}"]`);
     if (td) td.classList.add("active");
   });
+  setFocusCell(r, c);  // << add this line
   const num = cellNum[r]?.[c] || headNumber(p, r, c);
   const map = isAcross ? acrossMap : downMap;
   const clue = (num && map[num]) ? map[num].clue : "";
@@ -104,6 +105,14 @@ function renderClues(p){
     };
     d.appendChild(li);
   });
+}
+
+function setFocusCell(r, c){
+  // remove previous
+  document.querySelectorAll(".grid td.cursor").forEach(td => td.classList.remove("cursor"));
+  // add to current
+  const td = document.querySelector(`td[data-r="${r}"][data-c="${c}"]`);
+  if (td) td.classList.add("cursor");
 }
 
 function buildGrid(layout){
@@ -138,8 +147,10 @@ function buildGrid(layout){
         inp.dataset.r = r; inp.dataset.c = c;
 
         // highlight on focus
-        inp.addEventListener("focus", () => setActiveWord(puzzle, r, c));
-
+        inp.addEventListener("focus", () => {
+          setActiveWord(puzzle, r, c);
+          setFocusCell(r, c);
+        });
         // move forward within active word on entry
         inp.addEventListener("input", (e) => {
           const v = e.target.value.toUpperCase().replace(/[^A-Z]/g,"");
@@ -338,9 +349,11 @@ async function init(){
     isAcross = !isAcross;
     const f = document.activeElement;
     if (f && f.tagName === "INPUT") {
-      setActiveWord(puzzle, +f.dataset.r, +f.dataset.c);
+      const r = +f.dataset.r, c = +f.dataset.c;
+      setActiveWord(puzzle, r, c);
+      setFocusCell(r, c);
     }
-  };  
+  };
   S("clear-word").onclick = clearCurrentWord;
   S("submit").onclick = submitFlow;
 
