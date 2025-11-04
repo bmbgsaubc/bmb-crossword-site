@@ -25,6 +25,7 @@
     <div id="timer" class="timer" style="display:none">00:00.0</div>
 
     <!-- Puzzle area -->
+  <section id="play" class ="play">
     <section id="puzzle">
       <div id="grid"></div>
       <div class="controls">
@@ -35,8 +36,7 @@
       <div id="result"></div>
     </section>
 
-    <div class="current-clue" id="current-clue"></div>
-    <section class="cluewrap">
+    <aside class="cluewrap">
       <div>
         <h3>Across</h3>
         <ol id="clues-across"></ol>
@@ -45,7 +45,10 @@
         <h3>Down</h3>
         <ol id="clues-down"></ol>
       </div>
-    </section>
+    </aside>
+  </section>
+    
+  <div class="current-clue" id="current-clue"></div>
   </main>
 
   <script>
