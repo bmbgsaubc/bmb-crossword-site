@@ -5,7 +5,7 @@ let attemptId = null;
 let isAcross = true;
 let timerHandle = null;
 let msElapsed = 0;
-let lastFocusedInput = null;
+let lastFocused = null; // {r,c}
 
 function logErr(msg, err){
   console.error(msg, err || "");
@@ -50,6 +50,63 @@ function computeNumbering(p){
       }
     }
   }
+}
+
+function buildKeys(){
+  const lettersRow = document.querySelector("#softkeys .letters");
+  lettersRow.innerHTML = "";
+  const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
+  letters.forEach(ch => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "key";
+    b.textContent = ch;
+    b.addEventListener("click", () => placeLetter(ch));
+    lettersRow.appendChild(b);
+  });
+  S("key-back").onclick = backspaceLetter;
+  S("key-clear").onclick = clearCurrentWord;
+}
+
+function placeLetter(ch){
+  if (!lastFocused) return;
+  const { r, c } = lastFocused;
+  const cell = document.querySelector(`.cell[data-r="${r}"][data-c="${c}"]`);
+  if (!cell) return;
+  cell.textContent = ch;
+  advanceCursor();
+}
+
+function backspaceLetter(){
+  if (!lastFocused) return;
+  const { r, c } = lastFocused;
+  const cell = document.querySelector(`.cell[data-r="${r}"][data-c="${c}"]`);
+  if (!cell) return;
+  if (cell.textContent) {
+    cell.textContent = "";
+  } else {
+    // move back one then clear
+    moveCursor(-1);
+    const prev = document.querySelector(`.cell[data-r="${lastFocused.r}"][data-c="${lastFocused.c}"]`);
+    if (prev) prev.textContent = "";
+    return;
+  }
+}
+
+function advanceCursor(){ moveCursor(+1); }
+function moveCursor(delta){
+  if (!lastFocused) return;
+  let { r, c } = lastFocused;
+  if (isAcross){
+    do { c += Math.sign(delta); } while (c>=0 && c<puzzle.cols && puzzle.layout[r][c] === "#");
+    if (c<0 || c>=puzzle.cols) return;
+  } else {
+    do { r += Math.sign(delta); } while (r>=0 && r<puzzle.rows && puzzle.layout[r][c] === "#");
+    if (r<0 || r>=puzzle.rows) return;
+  }
+  lastFocused = { r, c };
+  setActiveWord(puzzle, r, c);
+  setFocusCell(r, c);
 }
 
 function getWordCells(p, r, c, isAcross){
@@ -109,93 +166,45 @@ function renderClues(p){
 }
 
 function setFocusCell(r, c){
-  // remove previous
   document.querySelectorAll(".grid td.cursor").forEach(td => td.classList.remove("cursor"));
-  // add to current
   const td = document.querySelector(`td[data-r="${r}"][data-c="${c}"]`);
   if (td) td.classList.add("cursor");
+}f (td) td.classList.add("cursor");
 }
 
 function buildGrid(layout){
-  const rows = layout.length; const cols = layout[0].length;
-
-  // compute numbering/maps once per build
-  computeNumbering(puzzle);
-
+  const rows = layout.length, cols = layout[0].length;
   const table = document.createElement("table");
   table.className = "grid";
-
-  for (let r=0;r<rows;r++){
+  for (let r=0; r<rows; r++){
     const tr = document.createElement("tr");
-    for (let c=0;c<cols;c++){
+    for (let c=0; c<cols; c++){
       const td = document.createElement("td");
       td.dataset.r = r; td.dataset.c = c;
 
-      if (layout[r][c] === "#") {
+      const ch = layout[r][c];
+      if (ch === "#") {
         td.className = "block";
       } else {
-        // numbering
-        const n = cellNum[r][c];
-        if (n) {
-          const num = document.createElement("span");
-          num.className = "num";
-          num.textContent = n;
-          td.appendChild(num);
-        }
-        // input
-        const inp = document.createElement("input");
-        inp.maxLength = 1;
-        inp.dataset.r = r; inp.dataset.c = c;
-
-                // typing attributes to discourage QuickType/Autofill bars
-        inp.setAttribute('type', 'text');         // explicit text field
-        inp.setAttribute('inputmode', 'text');    // plain keyboard
-        inp.setAttribute('autocomplete', 'off');  // no suggestions, no stored creds
-        inp.setAttribute('autocorrect', 'off');   // iOS autocorrect off
-        inp.setAttribute('autocapitalize', 'none');
-        inp.setAttribute('spellcheck', 'false');
-        
-        // give each input a unique, non-credential-like name
-        inp.setAttribute('name', `cell_${r}_${c}`);
-
-        // highlight on focus
-        inp.addEventListener("focus", () => {
+        const cell = document.createElement("div");
+        cell.className = "cell";
+        cell.dataset.r = r; cell.dataset.c = c;
+        cell.textContent = "";            // letter goes here
+        cell.tabIndex = 0;                // for keyboard/aria
+        cell.addEventListener("click", () => {
           setActiveWord(puzzle, r, c);
           setFocusCell(r, c);
+          lastFocused = { r, c };
         });
-        inp.addEventListener('focus', () => { lastFocusedInput = inp; setActiveWord(puzzle, r, c); });
-        // move forward within active word on entry
-        inp.addEventListener("input", (e) => {
-          const v = e.target.value.toUpperCase().replace(/[^A-Z]/g,"");
-          e.target.value = v;
-          if (v) {
-            const cells = getWordCells(puzzle, r, c, isAcross);
-            let idx = cells.findIndex(k=>k.r===r && k.c===c);
-            const next = cells[idx+1];
-            if (next) {
-              const nxt = document.querySelector(`input[data-r="${next.r}"][data-c="${next.c}"]`);
-              if (nxt) nxt.focus();
-            }
-          }
-        });
-
-        td.appendChild(inp);
+        td.appendChild(cell);
       }
       tr.appendChild(td);
     }
     table.appendChild(tr);
   }
-
   S("grid").innerHTML = "";
   S("grid").appendChild(table);
-  // In buildGrid(), after S("grid").appendChild(table);
-  applyPhoneWidthSizing(puzzle.rows, puzzle.cols);
-  // render clues
-  renderClues(puzzle);
-
-  // focus the first open cell and highlight its word
-  const firstOpen = document.querySelector('.grid td:not(.block) input');
-  if (firstOpen){ firstOpen.focus(); setActiveWord(puzzle, +firstOpen.dataset.r, +firstOpen.dataset.c); }
+  applyPhoneWidthSizing(puzzle.rows, puzzle.cols);  // your sizer
 }
 
 // Compute the largest square cell that fits both width and height.
@@ -243,11 +252,11 @@ function applyPhoneWidthSizing(rows, cols) {
 function readGridString(){
   const rows = puzzle.layout.length, cols = puzzle.layout[0].length;
   let out = "";
-  for (let r=0;r<rows;r++){
-    for (let c=0;c<cols;c++){
+  for (let r=0; r<rows; r++){
+    for (let c=0; c<cols; c++){
       if (puzzle.layout[r][c] === "#") { out += "#"; continue; }
-      const inp = document.querySelector(`input[data-r="${r}"][data-c="${c}"]`);
-      const v = (inp?.value || "").toUpperCase();
+      const cell = document.querySelector(`.cell[data-r="${r}"][data-c="${c}"]`);
+      const v = (cell?.textContent || "").toUpperCase().trim();
       out += /^[A-Z]$/.test(v) ? v : "";
     }
   }
