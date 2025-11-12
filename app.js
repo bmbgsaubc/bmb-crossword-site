@@ -575,6 +575,9 @@ async function init(){
     console.warn('Preload failed:', e.message);
   }
 
+    // Initialize soft keyboard
+  buildKeys();
+
   // wire buttons as you already do
   S("btn-begin").onclick = beginFlow;
   S("toggle").onclick = ()=>{ isAcross = !isAcross; };
