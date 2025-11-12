@@ -64,8 +64,8 @@
     // Use ?week=2025-W44; fallback to a default
     const params = new URLSearchParams(location.search);
     window.CONFIG = {
-      weekId: params.get("week") || "2025-W47",   // must match your JSON filename
-      api: "https://script.google.com/macros/s/AKfycbzGQ2iAMr6P7WKSE43foTqV-teXl525ZJ2chZe40ZsUVUfceegt0ZNj83fx3lQSYeQQ/exec"
+      weekId: params.get("p") || "2025-W47",   // must match your JSON filename
+      api: "https://script.google.com/macros/s/AKfycbwisVF-d2wjVNyx0c8xLDpeq3bv3K3XavhSmzNvGlHT8xt8YDlJzW3G34o3iPuD29Er/exec"
     };
   </script>
   <script src="app.js"></script>
