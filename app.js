@@ -220,26 +220,128 @@ function setFocusCell(r, c){
 }
 
 // ===== Soft keyboard =====
-function buildKeys(){
-  const wrap = S("softkeys");
-  if (!wrap) return;
-  const lettersRow = wrap.querySelector(".letters");
-  if (!lettersRow) return;
-  lettersRow.innerHTML = "";
-  "QWERTYUIOPASDFGHJKLZXCVBNM⌫".split("").forEach(ch => {
-    const b = document.createElement("button");
-    b.type = "button"; b.className = "key"; b.textContent = ch;
+function buildKeys() {
+  const lettersRow = document.querySelector('#softkeys .row.letters');
+  lettersRow.innerHTML = '';
 
-    
-    if (ch === '⌫') {
-      b.id = 'key-back';
-      b.addEventListener('click', backspaceLetter);
-    } else {
-    b.addEventListener("click", () => placeLetter(ch));
-    lettersRow.appendChild(b);
-  });
-  S("key-back").onclick = backspaceLetter;
-  S("key-clear").onclick = clearCurrentWord;
+  const rows = [
+    'QWERTYUIOP',
+    'ASDFGHJKL',
+    'ZXCVBNM'   // we'll append ⌫ here
+  ];
+
+  const wrap = document.getElementById('softkeys');
+  wrap.innerHTML = `
+    <div class="row letters r1"></div>
+    <div class="row letters r2"></div>
+    <div class="row letters r3"></div>
+    <div class="row controls">
+      <button type="button" id="key-clear">Clear</button>
+    </div>
+  `;
+
+  const r1 = wrap.querySelector('.r1');
+  const r2 = wrap.querySelector('.r2');
+  const r3 = wrap.querySelector('.r3');
+
+  for (const ch of rows[0]) {
+    const b = document.createElement('button');
+    b.className = 'key';
+    b.type = 'button';
+    b.textContent = ch;
+    b.addEventListener('click', () => handleLetterInput(ch));
+    r1.appendChild(b);
+  }
+
+  for (const ch of rows[1]) {
+    const b = document.createElement('button');
+    b.className = 'key';
+    b.type = 'button';
+    b.textContent = ch;
+    b.addEventListener('click', () => handleLetterInput(ch));
+    r2.appendChild(b);
+  }
+
+  for (const ch of rows[2]) {
+    const b = document.createElement('button');
+    b.className = 'key';
+    b.type = 'button';
+    b.textContent = ch;
+    b.addEventListener('click', () => handleLetterInput(ch));
+    r3.appendChild(b);
+  }
+
+  // ⌫ at the far right of the Z-row
+  const back = document.createElement('button');
+  back.id = 'key-back';
+  back.className = 'key';
+  back.type = 'button';
+  back.textContent = '⌫';
+  back.addEventListener('click', handleBackspace);
+  r3.appendChild(back);
+
+  // existing clear
+  const clearBtn = document.getElementById('key-clear');
+  clearBtn.addEventListener('click', clearCurrentWord);
+}
+
+// Handle typing a letter
+function handleLetterInput(ch) {
+  const focused = document.activeElement;
+  if (!focused || !focused.dataset) return;
+
+  // Fill the current cell
+  focused.value = ch.toUpperCase();
+
+  // Move to the next cell in the current direction
+  const r = +focused.dataset.r;
+  const c = +focused.dataset.c;
+
+  let nextCell;
+  if (isAcross) {
+    let nc = c + 1;
+    while (nc < puzzle.cols && puzzle.layout[r][nc] === '#') nc++;
+    nextCell = document.querySelector(`input[data-r="${r}"][data-c="${nc}"]`);
+  } else {
+    let nr = r + 1;
+    while (nr < puzzle.rows && puzzle.layout[nr][c] === '#') nr++;
+    nextCell = document.querySelector(`input[data-r="${nr}"][data-c="${c}"]`);
+  }
+
+  if (nextCell) nextCell.focus();
+
+  // Update highlight + clue
+  setActiveWord(puzzle, r, c);
+  updateCurrentClue(puzzle, r, c);
+}
+
+// Handle backspace
+function handleBackspace() {
+  const focused = document.activeElement;
+  if (!focused || !focused.dataset) return;
+
+  const r = +focused.dataset.r;
+  const c = +focused.dataset.c;
+
+  // Clear current cell
+  focused.value = '';
+
+  // Move one cell backward
+  let prevCell;
+  if (isAcross) {
+    let pc = c - 1;
+    while (pc >= 0 && puzzle.layout[r][pc] === '#') pc--;
+    prevCell = document.querySelector(`input[data-r="${r}"][data-c="${pc}"]`);
+  } else {
+    let pr = r - 1;
+    while (pr >= 0 && puzzle.layout[pr][c] === '#') pr--;
+    prevCell = document.querySelector(`input[data-r="${pr}"][data-c="${c}"]`);
+  }
+
+  if (prevCell) prevCell.focus();
+
+  // Keep hint visible
+  updateCurrentClue(puzzle, r, c);
 }
 
 function placeLetter(ch){
