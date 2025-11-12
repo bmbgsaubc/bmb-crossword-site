@@ -116,9 +116,9 @@ function firstLetters(layout){
   for (let r=0;r<rows;r++){
     for (let c=0;c<cols;c++){
       if (layout[r][c] === "#") continue;
-      const startAcross = (c===0 || layout[r][c-1]==="#") && (c+1<cols && layout[r][c+1] !== "#");
-      const startDown   = (r===0 || layout[r-1][c]==="#") && (r+1<rows && layout[r+1][c] !== "#");
-      if (startAcross || startDown) {
+      const startsAcross = (c===0 || layout[r][c-1]==="#") && (c+1<cols && layout[r][c+1] !== "#");
+      const startsDown   = (r===0 || layout[r-1][c]==="#") && (r+1<rows && layout[r+1][c] !== "#");
+      if (startsAcross || startsDown) {
         n += 1;
         map.set(`${r},${c}`, n);
       }
@@ -134,24 +134,31 @@ function firstLetters(layout){
 // lastFocused = { r, c }
 
 function updateCurrentClue(p, r, c) {
+  // Ensure we have a map of first-letter numbers like { "r,c" => 1, 2, 3... }
   if (!p._numMap) p._numMap = firstLetters(p.layout);
 
-  // Walk to the first cell of the current word (based on isAcross)
+  // Walk back to the first cell of the current word
   let rr = r, cc = c;
   if (isAcross) {
-    while (cc-1 >= 0 && p.layout[rr][cc-1] !== '#') cc--;
+    while (cc - 1 >= 0 && p.layout[rr][cc - 1] !== '#') cc--;
   } else {
-    while (rr-1 >= 0 && p.layout[rr-1][cc] !== '#') rr--;
+    while (rr - 1 >= 0 && p.layout[rr - 1][cc] !== '#') rr--;
   }
-  const clueNum = p._numMap.get(`${rr},${cc}`);
-  const bucket = isAcross ? (p.clues?.across || {}) : (p.clues?.down || {});
-  const text = bucket[`${clueNum}${isAcross ? 'A' : 'D'}`] || bucket[clueNum] || '';
 
-  const box = document.getElementById('current-clue');
-  if (box) {
-    box.textContent = text ? `${clueNum} ${isAcross ? 'Across' : 'Down'} — ${text}` 
-                           : `${isAcross ? 'Across' : 'Down'}`;
-    box.style.display = 'block';
+  // Look up the clue number from that first cell
+  const clueNum = p._numMap.get(`${rr},${cc}`);
+
+  // Accept either "1A"/"1D" or numeric keys in your JSON
+  const bucket = isAcross ? (p.clues?.across || {}) : (p.clues?.down || {});
+  const key1 = `${clueNum}${isAcross ? 'A' : 'D'}`;
+  const clueText = bucket[key1] ?? bucket[clueNum] ?? '';
+
+  const el = document.getElementById('current-clue');
+  if (el) {
+    el.textContent = clueText
+      ? `${clueNum} ${isAcross ? 'Across' : 'Down'} — ${clueText}`
+      : `${isAcross ? 'Across' : 'Down'}`;
+    el.style.display = 'block';
   }
 }
 
@@ -226,7 +233,7 @@ function buildKeys(){
     
     if (ch === '⌫') {
       b.id = 'key-back';
-      b.addEventListener('click', handleBackspace);
+      b.addEventListener('click', backspaceLetter);
     } else {
     b.addEventListener("click", () => placeLetter(ch));
     lettersRow.appendChild(b);
@@ -247,6 +254,7 @@ function placeLetter(ch){
 function backspaceLetter(){
   if (!lastFocused) return;
   const { r, c } = lastFocused;
+  updateCurrentClue(puzzle, r, c);      // <-- keep
   const cell = document.querySelector(`.cell[data-r="${r}"][data-c="${c}"]`);
   if (!cell) return;
   if (cell.textContent) {
