@@ -219,9 +219,15 @@ function buildKeys(){
   const lettersRow = wrap.querySelector(".letters");
   if (!lettersRow) return;
   lettersRow.innerHTML = "";
-  "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("").forEach(ch => {
+  "QWERTYUIOPASDFGHJKLZXCVBNM⌫".split("").forEach(ch => {
     const b = document.createElement("button");
     b.type = "button"; b.className = "key"; b.textContent = ch;
+
+    
+    if (ch === '⌫') {
+      b.id = 'key-back';
+      b.addEventListener('click', handleBackspace);
+    } else {
     b.addEventListener("click", () => placeLetter(ch));
     lettersRow.appendChild(b);
   });
