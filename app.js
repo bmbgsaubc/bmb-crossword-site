@@ -513,10 +513,22 @@ async function submitFlow(){
   if (!attemptId) return logErr("Click Begin first.");
   stopTimer();
   const userGridString = readGridString();
+  const percentCorrect = puzzle.solutionString
+    ? computePercent(userGridString, puzzle.solutionString) // if you included solution in JSON
+    : null;
   try{
-    const fin = await post("finishAttempt", { attemptId, userGridString });
+    const fin = await post("finishAttempt", { attemptId, userGridString, percentCorrect });
     S("result").textContent = `You got ${fin.percentCorrect}% correct. Official time: ${(fin.elapsedMs/1000).toFixed(1)} s`;
   }catch(e){ logErr(e.message); }
+}
+
+function computePercent(user, sol){
+  const U = user.toUpperCase(), S = sol.toUpperCase();
+  let total=0, correct=0;
+  for (let i=0;i<S.length;i++){
+    if (S[i] !== "#") { total++; if (U[i] && U[i]===S[i]) correct++; }
+  }
+  return total ? Math.round(100*correct/total) : 0;
 }
 
 // ===== Init =====
