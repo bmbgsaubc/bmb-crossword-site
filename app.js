@@ -127,13 +127,43 @@ function firstLetters(layout){
   return map;
 }
 
+// --- helpers you likely already have ---
+// firstLetters(layout) => Map<'r,c', clueNum>
+// isAcross (boolean) indicates direction
+// setActiveWord(p, r, c) highlights the word starting at (r,c)
+// lastFocused = { r, c }
+
+function updateCurrentClue(p, r, c) {
+  if (!p._numMap) p._numMap = firstLetters(p.layout);
+
+  // Walk to the first cell of the current word (based on isAcross)
+  let rr = r, cc = c;
+  if (isAcross) {
+    while (cc-1 >= 0 && p.layout[rr][cc-1] !== '#') cc--;
+  } else {
+    while (rr-1 >= 0 && p.layout[rr-1][cc] !== '#') rr--;
+  }
+  const clueNum = p._numMap.get(`${rr},${cc}`);
+  const bucket = isAcross ? (p.clues?.across || {}) : (p.clues?.down || {});
+  const text = bucket[`${clueNum}${isAcross ? 'A' : 'D'}`] || bucket[clueNum] || '';
+
+  const box = document.getElementById('current-clue');
+  if (box) {
+    box.textContent = text ? `${clueNum} ${isAcross ? 'Across' : 'Down'} — ${text}` 
+                           : `${isAcross ? 'Across' : 'Down'}`;
+    box.style.display = 'block';
+  }
+}
+
+// ===== Active word highlight & current clue text =====
 // ===== Active word highlight & current clue text =====
 function setActiveWord(p, r, c){
+  // clear previous highlights
   document.querySelectorAll(".grid td.active").forEach(td=>td.classList.remove("active"));
   document.querySelectorAll(".grid td.cursor").forEach(td=>td.classList.remove("cursor"));
 
   const rows = p.rows, cols = p.cols;
-  // spread from (r,c) in current direction to get word cells
+
   if (isAcross){
     let c0=c; while (c0-1>=0 && p.layout[r][c0-1] !== "#") c0--;
     let c1=c; while (c1+1<cols && p.layout[r][c1+1] !== "#") c1++;
@@ -149,18 +179,14 @@ function setActiveWord(p, r, c){
       if (td) td.classList.add("active");
     }
   }
+
   const here = document.querySelector(`td[data-r="${r}"][data-c="${c}"]`);
   if (here) here.classList.add("cursor");
 
-  // set current clue text (mobile)
-  const clueEl = S("current-clue");
-  if (clueEl && puzzle.clues) {
-    const num = findClueNumberAt(r,c);
-    const key = (isAcross ? "across" : "down");
-    const clueText = lookupClueText(num, key);
-    clueEl.textContent = clueText ? `${num} ${isAcross ? "Across" : "Down"}: ${clueText}` : "";
-  }
+  // single source of truth: always update the hint here
+  updateCurrentClue(p, r, c);
 }
+
 function findClueNumberAt(r,c){
   // recompute numbering once and cache on puzzle
   if (!puzzle._numMap) puzzle._numMap = firstLetters(puzzle.layout);
@@ -183,6 +209,7 @@ function setFocusCell(r, c){
   document.querySelectorAll(".grid td.cursor").forEach(td => td.classList.remove("cursor"));
   const td = document.querySelector(`td[data-r="${r}"][data-c="${c}"]`);
   if (td) td.classList.add("cursor");
+  updateCurrentClue(puzzle, r, c);  // <-- add this
 }
 
 // ===== Soft keyboard =====
@@ -205,6 +232,7 @@ function buildKeys(){
 function placeLetter(ch){
   if (!lastFocused) return;
   const { r, c } = lastFocused;
+  updateCurrentClue(puzzle, r, c);    // <-- keep hint visible/updated
   const cell = document.querySelector(`.cell[data-r="${r}"][data-c="${c}"]`);
   if (!cell) return;
   cell.textContent = ch;
