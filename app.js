@@ -17,6 +17,23 @@ function logErr(msg, err){
   if (el) el.textContent = msg;
 }
 
+function normalizeWeekId(s){
+  return String(s||'').replace(/[\u2012\u2013\u2014\u2212]/g, '-').trim();
+}
+
+async function loadManifest(){
+  const res = await fetch('puzzles/index.json', { cache: 'no-store' });
+  if (!res.ok) throw new Error('Manifest not found (puzzles/index.json)');
+  return res.json();
+}
+
+function setChosenPuzzle(id){
+  CONFIG.weekId = normalizeWeekId(id);
+  // reflect selection in the UI if the chooser exists
+  const sel = document.getElementById('puzzle-chooser');
+  if (sel) sel.value = CONFIG.weekId;
+}
+
 // ===== Loading puzzle JSON =====
 function validatePuzzle(p){
   if (!p || !Array.isArray(p.layout)) throw new Error("Puzzle missing 'layout' array.");
@@ -483,7 +500,7 @@ async function beginFlow(){
 
   // Start attempt on server
   try {
-    const st = await post("startAttempt", { weekId: CFG.weekId, name, studentNumber: student, email, lab });
+    const st = await post("startAttempt", { weekId: CONFIG.weekId, name, studentNumber: student, email, lab });
     attemptId = st.attemptId;
   } catch (e) { return logErr(e.message); }
 
@@ -504,18 +521,51 @@ async function submitFlow(){
 
 // ===== Init =====
 async function init(){
-  // Preload puzzle so users see it behind the overlay
   try {
-    puzzle = await loadPuzzleJson(CFG.weekId);
+    // 1) Read query param (?p=ID), else use manifest default
+    const params = new URLSearchParams(location.search);
+    const fromUrl = params.get('p'); // new param "p"
+    const manifest = await loadManifest();
+
+    const all = (manifest.puzzles || []);
+    // populate dropdown (if present)
+    const sel = document.getElementById('puzzle-chooser');
+    if (sel) {
+      sel.innerHTML = all.map(p => `<option value="${p.id}">${p.title || p.id}</option>`).join('');
+    }
+
+    const chosen = normalizeWeekId(fromUrl || manifest.default || (all[0]?.id));
+    if (!chosen) throw new Error('No puzzles listed in puzzles/index.json');
+    setChosenPuzzle(chosen);
+
+    // 2) Load the chosen puzzle JSON from GitHub Pages
+    puzzle = await loadPuzzleJson(CONFIG.weekId);
+    S("title").textContent = puzzle.title || `BMB Weekly Crossword — ${CONFIG.weekId}`;
     buildGrid(puzzle.layout);
-    buildKeys();
+
+    // when chooser changes, reload the puzzle
+    if (sel) {
+      sel.addEventListener('change', async () => {
+        try {
+          setChosenPuzzle(sel.value);
+          puzzle = await loadPuzzleJson(CONFIG.weekId);
+          S("title").textContent = puzzle.title || `BMB Weekly Crossword — ${CONFIG.weekId}`;
+          buildGrid(puzzle.layout);
+          // optional: reset attempt state if someone switches before starting
+          attemptId = null;
+          S("overlayMsg").textContent = '';
+        } catch(e){
+          logErr(e.message);
+        }
+      });
+    }
   } catch (e) {
-    console.warn("Preload failed:", e.message);
+    console.warn('Preload failed:', e.message);
   }
 
-  // Wire buttons
+  // wire buttons as you already do
   S("btn-begin").onclick = beginFlow;
-  S("toggle").onclick = ()=>{ isAcross = !isAcross; if (lastFocused) setActiveWord(puzzle, lastFocused.r, lastFocused.c); };
+  S("toggle").onclick = ()=>{ isAcross = !isAcross; };
   S("clear-word").onclick = clearCurrentWord;
   S("submit").onclick = submitFlow;
 
