@@ -2,7 +2,8 @@
   "puzzles": [
     { "id": "2025-W44", "title": "Game Changers" },
     { "id": "2025-W44", "title": "Game Changers" },
-    { "id": "2025-W46", "title": "Game Changers" }
+    { "id": "2025-W46", "title": "Game Changers" },
+    { "id": "2025-W47", "title": "Universal Freestyle 178" }
   ],
-  "default": "2025-W46"
+  "default": "2025-W47"
 }
