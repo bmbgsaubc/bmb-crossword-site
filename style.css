@@ -1,298 +1,27 @@
-body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 0; padding: 1rem; }
-main { max-width: 900px; margin: 0 auto; }
-.overlay { position: fixed; inset: 0; background: rgba(0,0,0,.6); display: flex; align-items: center; justify-content: center; z-index: 10; }
-.overlay .card { background:#fff; padding:16px; border-radius:10px; width: min(420px, 90vw); display:flex; flex-direction:column; gap:8px; }
-.overlay input { padding:8px; }
-.timer { position: sticky; top: 0; background: #111; color:#fff; padding:6px 10px; display:inline-block; margin-top:8px; border-radius:6px; font-variant-numeric: tabular-nums; }
-.msg { color: #b00; font-size: 0.9rem; }
-.grid { border-collapse: collapse; }
-.grid td { width: 36px; height: 36px; border: 1px solid #bbb; text-align: center; padding: 0; }
-.grid td.block { background: #333; }
-.grid input { width: 100%; height: 100%; border: none; text-transform: uppercase; text-align: center; font-size: 18px; }
-.controls { margin-top: 8px; display: flex; gap: 6px; }
-input { padding: 8px; margin-right: 8px; }
-button { padding: 8px 12px; }
-/* Make each cell a square with visible grid lines */
-.grid {
-  border-collapse: collapse;
-  margin: 0 auto;
-}
-.grid td {
-  position: relative;                 /* for number overlay */
-  width: 36px;
-  height: 36px;
-  border: 1px solid #9aa0a6;          /* vertical + horizontal lines */
-  background: #fff;
-  padding: 0;
-}
-.grid td.block {
-  background: #222;                    /* black squares */
-  border-color: #222;
-}
+/* ===== Base ===== */
+:root { --cell: 34px; } /* JS will override to fit the screen */
 
-/* Inputs */
-html, body { -webkit-text-size-adjust: 100%; }   /* prevent iOS “helpful” zooming */
+html, body { margin: 0; padding: 0; -webkit-text-size-adjust: 100%; }
+body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
+main { max-width: 900px; margin: 0 auto; padding: 12px; }
 
-.grid td input {
-  width: 100%;
-  height: 100%;
-  padding: 0;
-  margin: 0;
-  border: 0;
-  outline: none;
-  background: transparent;
-  text-align: center;
-  text-transform: uppercase;
-  caret-color: transparent;         /* hides the cursor */
+#title { display: none; } /* hide crossword title per your request */
 
-  /* tie text metrics to cell size so it stays centered & square */
-  font-weight: 700;
-  font-size: calc(var(--cell) * 0.5);  /* shrink text on small cells */
-  line-height: var(--cell);
-  letter-spacing: 0.4px;
+/* ===== Overlay (name, student#, email, lab, Begin) ===== */
+.overlay { position: fixed; inset: 0; background: rgba(0,0,0,.6); display: flex; align-items: center; justify-content: center; z-index: 1000; }
+.overlay .card { background:#fff; padding:16px; border-radius:10px; width:min(420px, 92vw); display:flex; flex-direction:column; gap:8px; }
+.overlay input { padding:10px; font-size:16px; } /* >=16px prevents iOS zoom on focus */
+#overlayMsg { color:#b00; font-size:0.9rem; min-height: 1.2em; }
 
-  /* iOS quirks */
-  -webkit-appearance: none;
-}
+/* ===== Timer ===== */
+.timer { position: sticky; top: 0; background:#111; color:#fff; padding:6px 10px; border-radius:6px; display:inline-block; font-variant-numeric: tabular-nums; }
 
-/* Little number in top-left of the first cell of a word */
-.grid td .num {
-  position: absolute;
-  top: 2px; left: 3px;
-  font-size: 10px;
-  color: #444;
-  user-select: none;
-  pointer-events: none;
-}
+/* ===== Layout blocks ===== */
+#puzzle { margin: 10px 0; }
+#grid-wrap { width: 100%; max-width: 100svw; margin: 0 auto; overflow: hidden; } /* height set by JS for square board */
 
-/* Highlight the active word */
-.grid td.active { background: #fff6c2; }
-.grid td.active.block { background: #222; }
-
-/* Clues */
-.cluewrap {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
-  max-width: 720px;
-  margin: 16px auto;
-}
-.cluewrap h3 { margin: 0 0 6px; font-size: 14px; }
-.cluewrap ol { margin: 0; padding-left: 24px; max-height: 260px; overflow: auto; }
-.cluewrap li { margin: 2px 0; font-size: 14px; cursor: pointer; }
-.current-clue { text-align: center; margin: 10px auto; font-weight: 600; }
-/* Whole-word highlight (already present, keep it) */
-.grid td.active { background: #fff6c2; }     /* light yellow */
-.grid td.active.block { background: #222; }
-
-/* Focused cell: stronger box + slightly richer fill.
-   Use box-shadow so borders don't reflow the table. */
-.grid td.cursor {
-  background: #ffe38f;                        /* a bit deeper than .active */
-  box-shadow:
-    inset 0 0 0 2px #d97706,                  /* thick inner line (amber) */
-    0 0 0 1px transparent;                    /* keeps Chrome from collapsing */
-  position: relative;                         /* ensure stacking for shadow */
-  z-index: 1;                                 /* draws over neighbors */
-}
-
-/* Optional: make the letter stand out in the focused cell */
-.grid td.cursor input {
-  font-weight: 700;
-}
-/* -------------------------------
-   📱  Mobile layout adjustments
---------------------------------*/
-@media (max-width: 700px) {
-  /* Scale the grid to fit width while keeping it readable */
-  .grid {
-    width: 95vw;                /* fit screen */
-    height: auto;
-    table-layout: fixed;
-    transform-origin: top center;
-  }
-
-  .grid td {
-    width: calc(95vw / 15);     /* assuming a 15x15 grid; adjust dynamically if needed */
-    height: calc(95vw / 15);
-  }
-
-  /* Hide full clue lists */
-  .cluewrap {
-    display: none;
-  }
-
-  /* Keep only current clue visible */
-  .current-clue {
-    display: block;
-    background: #fef9c3;         /* subtle highlight */
-    border: 1px solid #d6a700;
-    border-radius: 6px;
-    padding: 6px 8px;
-    font-size: 15px;
-    line-height: 1.4;
-    margin: 10px auto;
-    width: 95%;
-    box-sizing: border-box;
-  }
-
-  /* Make buttons larger for touch */
-  .controls button {
-    flex: 1;
-    padding: 6px 10px;     /* smaller */
-    font-size: 13px;       /* smaller */
-    line-height: 1.1;
-    border-radius: 6px;
-  }
-
-  /* Center timer and reduce top padding */
-  .timer {
-    position: fixed;
-    top: 8px;
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 20;
-  }
-}
-
-/* ===== Layout: desktop two-column ===== */
-.play {
-  display: grid;
-  grid-template-columns: auto 320px; /* grid left, clues right */
-  gap: 20px;
-  align-items: start;
-}
-
-/* Clues panel */
-.cluewrap {
-  max-height: 70vh;
-  overflow: auto;
-}
-.cluewrap h3 { margin: 0 0 6px; font-size: 14px; }
-.cluewrap ol { margin: 0; padding-left: 24px; }
-.cluewrap li { margin: 2px 0; font-size: 14px; cursor: pointer; }
-
-.current-clue { text-align: center; margin: 10px auto; font-weight: 600; display: none; }
-
-/* ===== Cell sizing via CSS variable (we'll set --cell in JS) ===== */
-:root { --cell: 36px; }               /* fallback */
-.grid td { width: var(--cell); height: var(--cell); }
-
-/* Your existing grid styles still apply:
-   .grid { border-collapse: collapse; table-layout: fixed; } etc. */
-
-/* ===== Mobile behavior ===== */
-@media (max-width: 800px) {
-  .play { display: block; }           /* stack grid; hide side clues */
-  .cluewrap { display: none; }
-
-  /* Show only the current clue under the grid */
-  .current-clue {
-    display: block;
-    background: #fef9c3;
-    border: 1px solid #d6a700;
-    border-radius: 6px;
-    padding: 6px 8px;
-    font-size: 12px;
-    line-height: 1.35;
-    margin: 8px 0 6px;
-  }
-
-  /* Let the grid fill the width nicely */
-  #puzzle { width: 96vw; margin: 0 auto; }
-  .grid { width: 100%; }
-
-  /* Touch-friendly buttons */
-  .controls button { flex: 1; padding: 6px 8px; font-size: 12px; }
-}
-
-/* ===== Word highlight + focused cell (from earlier step) ===== */
-.grid td.active { background: #fff6c2; }
-.grid td.active.block { background: #222; }
-.grid td.cursor {
-  background: #ffe38f;
-  box-shadow: inset 0 0 0 2px #d97706;
-  position: relative;
-  z-index: 1;
-}
-.grid td .num { position:absolute; top:2px; left:3px; font-size:10px; color:#444; }
-
-/* ===== Desktop: clues on the right ===== */
-.play {
-  display: grid;
-  grid-template-columns: auto 320px;
-  gap: 20px;
-  align-items: start;
-}
-#grid-wrap { max-width: calc(var(--cell, 36px) * 15); } /* safety */
-
-/* ===== Mobile layout ===== */
-@media (max-width: 800px) {
-  :root { --cell: 32px; }              /* fallback; JS will override */
-
-  body { padding: 6px; }               /* tighter margins on phone */
-  .play { display: block; }
-  .cluewrap { display: none; }         /* hide full lists on phone */
-
-  /* The grid wrapper takes almost the whole visible viewport. */
-  #grid-wrap {
-    width: 96vw;                       /* nearly full-width */
-    margin: 4px auto 8px;
-    /* Height will be set by JS via --vhAvail, but constrain in CSS too: */
-    max-height: calc(var(--vhAvail, 70vh) - 160px); /* header/controls/clue room */
-    overflow: hidden;                   /* keep it snug */
-  }
-
-  /* Square cells computed via --cell */
-  .grid { width: 100%; border-collapse: collapse; table-layout: fixed; }
-  .grid td { width: var(--cell); height: var(--cell); }
-
-  /* Only the active clue shows on phone */
-  .current-clue {
-    display: block;
-    background: #fef9c3;
-    border: 1px solid #d6a700;
-    border-radius: 6px;
-    padding: 6px 8px;
-    font-size: 15px;
-    line-height: 1.35;
-    width: 96%;
-    margin: 6px auto 10px;
-    box-sizing: border-box;
-  }
-
-  .controls { gap: 8px; }
-  .controls button { flex: 1; padding: 12px; font-size: 16px; }
-}
-
-/* Word + focus styling (from earlier) */
-.grid td.active { background: #fff6c2; }
-.grid td.active.block { background: #222; }
-.grid td.cursor { background: #ffe38f; box-shadow: inset 0 0 0 2px #1d4ed8; z-index: 1; }
-.grid td .num { position:absolute; top:2px; left:3px; font-size:10px; color:#444; }
-
-:root { --cell: 36px; }            /* JS overwrites this */
-
-.grid { table-layout: fixed; border-collapse: collapse; }
-.grid td {
-  width: var(--cell);
-  height: var(--cell);
-  padding: 0;
-  border: 1px solid #9aa0a6;
-  background: #fff;
-  box-sizing: border-box;          /* borders don’t change size */
-}
-.grid td.block { background:#222; border-color:#222; }
-
-/* Prevent iOS auto-zoom and text inflation */
-html, body { -webkit-text-size-adjust: 100%; }
-
-/* Hide title everywhere (or wrap in a media query if you only want it hidden on phones) */
-#title { display: none; }
-
-/* Square cells controlled by --cell (your JS sets this) */
-:root { --cell: 34px; } /* fallback; JS overwrites */
-.grid { table-layout: fixed; border-collapse: collapse; }
+/* ===== Grid (table + td, cells are DIVs) ===== */
+.grid { width: 100%; table-layout: fixed; border-collapse: collapse; }
 .grid td {
   width: var(--cell);
   height: var(--cell);
@@ -300,132 +29,55 @@ html, body { -webkit-text-size-adjust: 100%; }
   border: 1px solid #9aa0a6;
   background: #fff;
   box-sizing: border-box;
+  position: relative;
 }
 .grid td.block { background:#222; border-color:#222; }
 
-/* Inputs: keep font-size >= 16px to stop iOS focus-zoom, but tie to cell size */
-/* Cell size comes from --cell; leave that as-is. Only change text sizing. */
-.grid td input{
-  width:100%; height:100%;
-  margin:0; padding:0; border:0; outline:0;
-  background:transparent; text-align:center; text-transform:uppercase;
-  font-weight:700;
-  /* ↓ smaller letters; still >=16px to avoid iOS zoom */
-  font-size: max(16px, calc(var(--cell) * 0.45));
-  line-height: var(--cell);
-  letter-spacing: 0.4px;        /* slightly tighter */
-  -webkit-appearance:none;
-  caret-color: transparent;         /* hides the cursor */
+/* numbering */
+.grid td .num { position:absolute; top:2px; left:3px; font-size:10px; color:#444; user-select:none; pointer-events:none; }
 
-}
-
-/* Word highlight + focused cell (unchanged) */
-.grid td.active { background: #fff6c2; }
-.grid td.active.block { background: #222; }
-.grid td.cursor { background:#ffe38f; box-shadow: inset 0 0 0 2px #1d4ed8; z-index:1; }
-.grid td .num { position:absolute; top:2px; left:3px; font-size:10px; color:#444; }
-
-/* Smaller buttons */
-.controls { margin-top: 8px; display:flex; gap:6px; }
-.controls button {
-  padding: 8px 10px;         /* smaller */
-  font-size: 14px;           /* smaller */
-  line-height: 1.1;
-}
-
-/* Mobile layout: clues hidden, current clue shown, grid fills under keyboard */
-@media (max-width: 800px) {
-  .cluewrap { display: none; }
-  #puzzle { width: 96vw; margin: 0 auto; }
-  .grid { width: 100%; }
-  .current-clue {
-    display: block;
-    background: #fef9c3;
-    border: 1px solid #d6a700;
-    border-radius: 6px;
-    padding: 6px 8px;
-    font-size: 15px;
-    width: 96%;
-    margin: 6px auto 8px;
-    box-sizing: border-box;
-  }
-}
-/* Full-bleed mobile width, respect notches */
-#puzzle { margin: 0; padding: 0; }
-#grid-wrap {
-  width: 100svw;                 /* small-viewport width (iOS-friendly) */
-  max-width: 100svw;
-  margin: 0 auto;
-  overflow: hidden;
-  /* height is set by JS; we keep it empty here */
-}
-
-.grid { width: 100%; table-layout: fixed; border-collapse: collapse; }
-
-/* Cells stay squares via --cell (set by JS) */
-:root { --cell: 32px; }
-.grid td { width: var(--cell); height: var(--cell); box-sizing: border-box; }
-.grid td.block { background:#222; border-color:#222; }
-
-/* Inputs: prevent iOS focus-zoom, tie to cell size */
-/* Cell size comes from --cell; leave that as-is. Only change text sizing. */
-.grid td input{
-  width:100%; height:100%;
-  margin:0; padding:0; border:0; outline:0;
-  background:transparent; text-align:center; text-transform:uppercase;
-  font-weight:700;
-  /* ↓ smaller letters; still >=16px to avoid iOS zoom */
-  font-size: max(16px, calc(var(--cell) * 0.45));
-  line-height: var(--cell);
-  letter-spacing: 0.4px;        /* slightly tighter */
-  -webkit-appearance:none;
-  caret-color: transparent;         /* hides the cursor */
-
-}
-
-/* Hide side clue list on phones; show only current clue */
-@media (max-width: 800px){
-  .cluewrap{ display:none; }
-  .current-clue{ display:block; width: 94svw; margin: 8px auto; }
-}
-
-/* Mobile: a touch smaller still (optional) */
-@media (max-width: 800px) {
-  .controls { gap: 6px; }
-  .controls button {
-    padding: 6px 8px;
-    font-size: 12.5px;
-  }
-}
-
-/* Hint box styling sits right above the buttons */
-.current-clue {
-  display: block;               /* visible on mobile; desktop OK too */
-  background: #fef9c3;
-  border: 1px solid #d6a700;
-  border-radius: 6px;
-  padding: 6px 8px;
-  font-size: 14px;              /* smaller than before */
-  line-height: 1.35;
-  margin: 8px 0 6px;            /* above the buttons now */
-}
-/* Also prevent selection highlight from showing */
-.grid td input::selection {
-  background: transparent;
-}
-
-/* cells are divs now, not inputs */
+/* the letter box */
 .grid td .cell {
   width: 100%; height: 100%;
   display: flex; align-items: center; justify-content: center;
   font-weight: 700;
-  font-size: max(16px, calc(var(--cell) * 0.42)); /* smaller text, still ≥16px */
+  font-size: max(16px, calc(var(--cell) * 0.42)); /* readable but conservative */
   line-height: 1;
   user-select: none;
 }
 
+/* whole word highlight + focused cell */
+.grid td.active { background:#fff6c2; }
+.grid td.active.block { background:#222; }
+.grid td.cursor { background:#ffe38f; box-shadow: inset 0 0 0 2px #1d4ed8; z-index:1; }
+
+/* ===== Hint box ABOVE the buttons ===== */
+.current-clue {
+  display: block;
+  background: #fef9c3;
+  border: 1px solid #d6a700;
+  border-radius: 6px;
+  padding: 6px 8px;
+  font-size: 14px;
+  line-height: 1.35;
+  margin: 8px 0 6px;  /* sits above the controls */
+}
+
+/* ===== Controls/buttons BELOW the hint ===== */
+.controls { display:flex; gap:6px; margin: 6px 0 10px; }
+.controls button {
+  flex: 1;
+  padding: 6px 10px;          /* smaller per your request */
+  font-size: 13px;            /* smaller */
+  line-height: 1.1;
+  border-radius: 6px;
+  border: 1px solid #c7cbd1;
+  background: #f7f7f9;
+}
+
+/* ===== Soft keyboard (no native iOS keyboard) ===== */
 .softkeys { margin: 6px 0 4px; }
-.softkeys .row { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
+.softkeys .row { display:flex; flex-wrap:wrap; gap:6px; justify-content:center; }
 .softkeys .key,
 .softkeys .controls button {
   padding: 6px 8px;
@@ -435,3 +87,27 @@ html, body { -webkit-text-size-adjust: 100%; }
   background: #f7f7f9;
 }
 .softkeys .key { width: 32px; }
+
+/* ===== Desktop: clues on the right ===== */
+.play { display:grid; grid-template-columns: minmax(0,1fr) 320px; gap:20px; align-items:start; }
+.cluewrap { max-height: 70vh; overflow:auto; }
+.cluewrap h3 { margin: 0 0 6px; font-size: 14px; }
+.cluewrap ol { margin: 0; padding-left: 24px; }
+.cluewrap li { margin: 2px 0; font-size: 14px; cursor: pointer; }
+
+/* ===== Mobile tweaks ===== */
+@media (max-width: 800px) {
+  body { padding: 8px; }
+  .play { display:block; }
+  .cluewrap { display:none; }            /* only show current clue on phones */
+
+  /* full-bleed width; JS sets --cell so squares stay perfect */
+  #grid-wrap { width: 100svw; max-width: 100svw; margin-left: 50%; transform: translateX(-50%); }
+
+  /* slightly smaller letters on tighter screens */
+  .grid td .cell { font-size: max(16px, calc(var(--cell) * 0.40)); }
+
+  /* buttons already small; keep spacing tight */
+  .controls { gap:6px; }
+  .controls button { padding:6px 8px; font-size:13px; }
+}
