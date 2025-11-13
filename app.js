@@ -18,10 +18,6 @@ function logErr(msg, err){
   if (el) el.textContent = msg;
 }
 
-function normalizeWeekId(s){
-  return String(s||'').replace(/[\u2012\u2013\u2014\u2212]/g, '-').trim();
-}
-
 async function loadManifest(){
   const res = await fetch('puzzles/index.json', { cache: 'no-store' });
   if (!res.ok) throw new Error('Manifest not found (puzzles/index.json)');
@@ -594,9 +590,6 @@ async function init(){
     if (sel) {
       sel.innerHTML = all.map(p => `<option value="${p.id}">${p.title || p.id}</option>`).join('');
     }
-
-    const chosen = normalizeWeekId(fromUrl || manifest.default || (all[0]?.id));
-    if (!chosen) throw new Error('No puzzles listed in puzzles/index.json');
     setChosenPuzzle(chosen);
 
     // 2) Load the chosen puzzle JSON from GitHub Pages
