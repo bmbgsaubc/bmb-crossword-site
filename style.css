@@ -73,6 +73,7 @@ main { max-width: 900px; margin: 0 auto; padding: 12px; }
   border-radius: 6px;
   border: 1px solid #c7cbd1;
   background: #f7f7f9;
+  touch-action: manipulation;  /* prevent Safari double-tap zoom */
 }
 
 /* ===== Soft keyboard (no native iOS keyboard) ===== */
@@ -96,6 +97,7 @@ main { max-width: 900px; margin: 0 auto; padding: 12px; }
   border-radius: 6px;
   border: 1px solid #c7cbd1;
   background: #f7f7f9;
+  touch-action: manipulation;  /* stop double-tap zoom while typing */
 }
 .softkeys .controls button {
   padding: 6px 8px;
@@ -103,6 +105,7 @@ main { max-width: 900px; margin: 0 auto; padding: 12px; }
   border-radius: 6px;
   border: 1px solid #c7cbd1;
   background: #f7f7f9;
+  touch-action: manipulation;
 }
 
 /* ===== Desktop: clues on the right ===== */
