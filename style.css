@@ -77,8 +77,8 @@ main { max-width: 900px; margin: 0 auto; padding: 12px; }
 }
 
 /* ===== Soft keyboard (no native iOS keyboard) ===== */
-.softkeys { margin: 6px 0 4px; }
-.softkeys .row { display:flex; gap:6px; justify-content:center; }
+.softkeys { margin: 4px 0 4px; }
+.softkeys .row { display:flex; gap:4px; justify-content:center; }
 /* ❗ Key part: letter rows do NOT wrap */
 .softkeys .row.letters {
   flex-wrap: nowrap;
@@ -92,8 +92,8 @@ main { max-width: 900px; margin: 0 auto; padding: 12px; }
 .softkeys .key {
   flex: 0 0 auto;
   min-width: 24px;      /* shrink a bit so all 10 fit on small screens */
-  padding: 9px 14px;
-  font-size: 14px;
+  padding: 9px 12px;
+  font-size: 12px;
   border-radius: 6px;
   border: 1px solid #c7cbd1;
   background: #f7f7f9;
