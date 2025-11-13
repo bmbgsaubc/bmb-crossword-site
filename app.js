@@ -495,7 +495,6 @@ function clearCurrentWord() {
   // keep highlight + clue consistent
   setActiveWord(puzzle, curR, curC);
 }
-}
 
 // Read grid into string for scoring
 function readGridString(){
@@ -616,12 +615,14 @@ async function init(){
     const manifest = await loadManifest();
 
     const all = (manifest.puzzles || []);
+    const manifestDefault = manifest.default || all[0]?.id || null;
+    const chosen = (fromUrl && fromUrl.trim()) || CFG.weekId || manifestDefault;
     // populate dropdown (if present)
     const sel = document.getElementById('puzzle-chooser');
     if (sel) {
       sel.innerHTML = all.map(p => `<option value="${p.id}">${p.title || p.id}</option>`).join('');
     }
-    setChosenPuzzle(chosen);
+    if (chosen) setChosenPuzzle(chosen);
 
     // 2) Load the chosen puzzle JSON from GitHub Pages
     puzzle = await loadPuzzleJson(CONFIG.weekId);

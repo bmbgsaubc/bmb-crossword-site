@@ -1,0 +1,6 @@
+{
+    "workbench.editor.autoLockGroups": {
+        "chatgpt.conversationEditor": true
+    },
+    "editor.defaultFormatter": "openai.chatgpt"
+}
