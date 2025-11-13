@@ -6,6 +6,7 @@ let isAcross = true;
 let timerHandle = null;
 let msElapsed = 0;
 let lastFocused = null; // {r,c}
+let curR = 0, curC = 0; // current cursor (row, col)
 
 // minimal config (index.html sets window.CONFIG)
 const CFG = window.CONFIG;
