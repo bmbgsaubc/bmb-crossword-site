@@ -25,7 +25,7 @@ async function loadManifest(){
 }
 
 function setChosenPuzzle(id){
-  CONFIG.weekId = normalizeWeekId(id);
+  CONFIG.weekId = id.trim();
   // reflect selection in the UI if the chooser exists
   const sel = document.getElementById('puzzle-chooser');
   if (sel) sel.value = CONFIG.weekId;
@@ -44,8 +44,8 @@ function validatePuzzle(p){
   p.rows = rows; p.cols = cols;
   return p;
 }
-async function loadPuzzleJson(weekId){
-  const url = `puzzles/${encodeURIComponent(weekId)}.json`;
+async function loadPuzzleJson(id){
+  const url = `puzzles/${id}.json`;
   const res = await fetch(url, { cache: "no-store" });
   if (!res.ok) throw new Error(`Puzzle JSON not found at ${url} (HTTP ${res.status})`);
   const json = await res.json();
@@ -246,6 +246,9 @@ function setFocusCell(r, c){
 // ===== Soft keyboard =====
 function buildKeys() {
   const wrap = document.getElementById('softkeys');
+  if (!wrap) return;
+
+  // Clear any previous keyboard
   wrap.innerHTML = `
     <div class="row letters r1"></div>
     <div class="row letters r2"></div>
@@ -255,32 +258,60 @@ function buildKeys() {
     </div>
   `;
 
-  const rows = ['QWERTYUIOP','ASDFGHJKL','ZXCVBNM'];
+  const rows = [
+    'QWERTYUIOP',
+    'ASDFGHJKL',
+    'ZXCVBNM'
+  ];
+
   const r1 = wrap.querySelector('.r1');
   const r2 = wrap.querySelector('.r2');
   const r3 = wrap.querySelector('.r3');
 
-  const addKey = (parent, ch, handler) => {
+  // Row 1
+  for (const ch of rows[0]) {
     const b = document.createElement('button');
     b.className = 'key';
     b.type = 'button';
     b.textContent = ch;
-    // prevent stealing focus before click fires
-    b.addEventListener('mousedown', e => e.preventDefault());
-    b.addEventListener('click', handler);
-    parent.appendChild(b);
-  };
+    b.addEventListener('click', () => handleLetterInput(ch));
+    r1.appendChild(b);
+  }
 
-  for (const ch of rows[0]) addKey(r1, ch, () => handleLetterInput(ch));
-  for (const ch of rows[1]) addKey(r2, ch, () => handleLetterInput(ch));
-  for (const ch of rows[2]) addKey(r3, ch, () => handleLetterInput(ch));
+  // Row 2
+  for (const ch of rows[1]) {
+    const b = document.createElement('button');
+    b.className = 'key';
+    b.type = 'button';
+    b.textContent = ch;
+    b.addEventListener('click', () => handleLetterInput(ch));
+    r2.appendChild(b);
+  }
+
+  // Row 3 (Z–M)
+  for (const ch of rows[2]) {
+    const b = document.createElement('button');
+    b.className = 'key';
+    b.type = 'button';
+    b.textContent = ch;
+    b.addEventListener('click', () => handleLetterInput(ch));
+    r3.appendChild(b);
+  }
 
   // ⌫ at the far right of row 3
-  addKey(r3, '⌫', handleBackspace);
+  const back = document.createElement('button');
+  back.id = 'key-back';
+  back.className = 'key';
+  back.type = 'button';
+  back.textContent = '⌫';
+  back.addEventListener('click', handleBackspace);
+  r3.appendChild(back);
 
-  // Clear current word
+  // Clear-current-word button in controls row
   const clearBtn = document.getElementById('key-clear');
-  clearBtn.addEventListener('click', clearCurrentWord);
+  if (clearBtn) {
+    clearBtn.addEventListener('click', clearCurrentWord);
+  }
 }
 
 function putLetterAt(r, c, ch){
@@ -596,6 +627,7 @@ async function init(){
     puzzle = await loadPuzzleJson(CONFIG.weekId);
     S("title").textContent = puzzle.title || `BMB Weekly Crossword — ${CONFIG.weekId}`;
     buildGrid(puzzle.layout);
+    buildKeys();
 
     // when chooser changes, reload the puzzle
     if (sel) {
@@ -605,6 +637,7 @@ async function init(){
           puzzle = await loadPuzzleJson(CONFIG.weekId);
           S("title").textContent = puzzle.title || `BMB Weekly Crossword — ${CONFIG.weekId}`;
           buildGrid(puzzle.layout);
+          buildKeys();
           // optional: reset attempt state if someone switches before starting
           attemptId = null;
           S("overlayMsg").textContent = '';
