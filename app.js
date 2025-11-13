@@ -71,33 +71,38 @@ function applyPhoneWidthSizing(rows, cols) {
 // ===== Build grid with DIV cells (no native keyboard) =====
 function buildGrid(layout){
   const rows = layout.length, cols = layout[0].length;
-  // Table with data-* on TD so we can style cursor/active
+
   const table = document.createElement("table");
   table.className = "grid";
   table.setAttribute("role","grid");
 
   // Precompute numbering for first-letter squares
-  const numbers = firstLetters(layout);
+  const numbers = firstLetters(layout);   // your existing helper
 
-  for (let r=0;r<rows;r++){
+  for (let r = 0; r < rows; r++){
     const tr = document.createElement("tr");
-    for (let c=0;c<cols;c++){
+
+    for (let c = 0; c < cols; c++){
       const td = document.createElement("td");
-      td.dataset.r = r; td.dataset.c = c;
+      td.dataset.r = r;
+      td.dataset.c = c;
 
       if (layout[r][c] === "#") {
         td.className = "block";
       } else {
         const cell = document.createElement("div");
         cell.className = "cell";
-        cell.dataset.r = r; cell.dataset.c = c;
+        cell.dataset.r = r;
+        cell.dataset.c = c;
         cell.textContent = "";
-        cell.tabIndex = 0;
+
+        // we DO NOT focus anything; we just move our logical cursor
         cell.addEventListener("click", () => {
-          setActiveWord(puzzle, r, c);
-          setFocusCell(r, c);
-          lastFocused = { r, c };
+          curR = r;
+          curC = c;
+          setActiveWord(puzzle, curR, curC);   // highlight word + clue
         });
+
         td.appendChild(cell);
 
         // draw number if first letter of a clue
@@ -109,20 +114,25 @@ function buildGrid(layout){
           td.appendChild(num);
         }
       }
+
       tr.appendChild(td);
     }
+
     table.appendChild(tr);
   }
+
   S("grid").innerHTML = "";
   S("grid").appendChild(table);
-  applyPhoneWidthSizing(puzzle.rows, puzzle.cols);
-  // focus first non-block by default
+
+  // responsive sizing
+  applyPhoneWidthSizing(rows, cols);  // your existing function
+
+  // set initial cursor on first non-block cell
   const first = table.querySelector(".cell");
   if (first) {
-    const r = +first.dataset.r, c = +first.dataset.c;
-    setActiveWord(puzzle, r, c);
-    setFocusCell(r, c);
-    lastFocused = { r, c };
+    curR = +first.dataset.r;
+    curC = +first.dataset.c;
+    setActiveWord(puzzle, curR, curC);
   }
 }
 
@@ -239,15 +249,6 @@ function setFocusCell(r, c){
 
 // ===== Soft keyboard =====
 function buildKeys() {
-  const lettersRow = document.querySelector('#softkeys .row.letters');
-  lettersRow.innerHTML = '';
-
-  const rows = [
-    'QWERTYUIOP',
-    'ASDFGHJKL',
-    'ZXCVBNM'   // we'll append ⌫ here
-  ];
-
   const wrap = document.getElementById('softkeys');
   wrap.innerHTML = `
     <div class="row letters r1"></div>
@@ -258,108 +259,140 @@ function buildKeys() {
     </div>
   `;
 
+  const rows = ['QWERTYUIOP','ASDFGHJKL','ZXCVBNM'];
   const r1 = wrap.querySelector('.r1');
   const r2 = wrap.querySelector('.r2');
   const r3 = wrap.querySelector('.r3');
 
-  for (const ch of rows[0]) {
+  const addKey = (parent, ch, handler) => {
     const b = document.createElement('button');
     b.className = 'key';
     b.type = 'button';
     b.textContent = ch;
-    b.addEventListener('click', () => handleLetterInput(ch));
-    r1.appendChild(b);
-  }
+    // prevent stealing focus before click fires
+    b.addEventListener('mousedown', e => e.preventDefault());
+    b.addEventListener('click', handler);
+    parent.appendChild(b);
+  };
 
-  for (const ch of rows[1]) {
-    const b = document.createElement('button');
-    b.className = 'key';
-    b.type = 'button';
-    b.textContent = ch;
-    b.addEventListener('click', () => handleLetterInput(ch));
-    r2.appendChild(b);
-  }
+  for (const ch of rows[0]) addKey(r1, ch, () => handleLetterInput(ch));
+  for (const ch of rows[1]) addKey(r2, ch, () => handleLetterInput(ch));
+  for (const ch of rows[2]) addKey(r3, ch, () => handleLetterInput(ch));
 
-  for (const ch of rows[2]) {
-    const b = document.createElement('button');
-    b.className = 'key';
-    b.type = 'button';
-    b.textContent = ch;
-    b.addEventListener('click', () => handleLetterInput(ch));
-    r3.appendChild(b);
-  }
+  // ⌫ at the far right of row 3
+  addKey(r3, '⌫', handleBackspace);
 
-  // ⌫ at the far right of the Z-row
-  const back = document.createElement('button');
-  back.id = 'key-back';
-  back.className = 'key';
-  back.type = 'button';
-  back.textContent = '⌫';
-  back.addEventListener('click', handleBackspace);
-  r3.appendChild(back);
-
-  // existing clear
+  // Clear current word
   const clearBtn = document.getElementById('key-clear');
+  clearBtn.addEventListener('mousedown', e => e.preventDefault());
   clearBtn.addEventListener('click', clearCurrentWord);
 }
 
-// Handle typing a letter
-function handleLetterInput(ch) {
-  const focused = document.activeElement;
-  if (!focused || !focused.dataset) return;
-
-  // Fill the current cell
-  focused.value = ch.toUpperCase();
-
-  // Move to the next cell in the current direction
-  const r = +focused.dataset.r;
-  const c = +focused.dataset.c;
-
-  let nextCell;
-  if (isAcross) {
-    let nc = c + 1;
-    while (nc < puzzle.cols && puzzle.layout[r][nc] === '#') nc++;
-    nextCell = document.querySelector(`input[data-r="${r}"][data-c="${nc}"]`);
-  } else {
-    let nr = r + 1;
-    while (nr < puzzle.rows && puzzle.layout[nr][c] === '#') nr++;
-    nextCell = document.querySelector(`input[data-r="${nr}"][data-c="${c}"]`);
-  }
-
-  if (nextCell) nextCell.focus();
-
-  // Update highlight + clue
-  setActiveWord(puzzle, r, c);
-  updateCurrentClue(puzzle, r, c);
+function putLetterAt(r, c, ch){
+  const td = document.querySelector(`td[data-r="${r}"][data-c="${c}"]`);
+  if (!td || td.classList.contains('block')) return;
+  const cell = td.querySelector('.cell');
+  if (cell) cell.textContent = ch;
 }
 
-// Handle backspace
-function handleBackspace() {
-  const focused = document.activeElement;
-  if (!focused || !focused.dataset) return;
+function getLetterAt(r, c){
+  const td = document.querySelector(`td[data-r="${r}"][data-c="${c}"]`);
+  const cell = td?.querySelector('.cell');
+  return (cell?.textContent || '').toUpperCase();
+}
 
-  const r = +focused.dataset.r;
-  const c = +focused.dataset.c;
-
-  // Clear current cell
-  focused.value = '';
-
-  // Move one cell backward
-  let prevCell;
-  if (isAcross) {
-    let pc = c - 1;
-    while (pc >= 0 && puzzle.layout[r][pc] === '#') pc--;
-    prevCell = document.querySelector(`input[data-r="${r}"][data-c="${pc}"]`);
+function moveNextCell(){
+  const rows = puzzle.rows, cols = puzzle.cols;
+  let r = curR, c = curC;
+  if (isAcross){
+    do { c++; } while (c<cols && puzzle.layout[r][c] === '#');
+    if (c>=cols){ /* stop at end of row */ c = curC; }
+    curC = c;
   } else {
-    let pr = r - 1;
-    while (pr >= 0 && puzzle.layout[pr][c] === '#') pr--;
-    prevCell = document.querySelector(`input[data-r="${pr}"][data-c="${c}"]`);
+    do { r++; } while (r<rows && puzzle.layout[r][c] === '#');
+    if (r>=rows){ r = curR; }
+    curR = r;
+  }
+  setActiveWord(puzzle, curR, curC);
+}
+
+function movePrevCell(){
+  const rows = puzzle.rows, cols = puzzle.cols;
+  let r = curR, c = curC;
+  if (isAcross){
+    do { c--; } while (c>=0 && puzzle.layout[r][c] === '#');
+    if (c<0){ c = curC; }
+    curC = c;
+  } else {
+    do { r--; } while (r>=0 && puzzle.layout[r][c] === '#');
+    if (r<0){ r = curR; }
+    curR = r;
+  }
+  setActiveWord(puzzle, curR, curC);
+}
+
+function handleLetterInput(ch) {
+  if (!puzzle) return;
+
+  // write into current logical cell
+  const cell = document.querySelector(`.cell[data-r="${curR}"][data-c="${curC}"]`);
+  if (cell) {
+    cell.textContent = ch.toUpperCase();
   }
 
-  if (prevCell) prevCell.focus();
+  // move forward in the current direction
+  if (isAcross) {
+    let c = curC + 1;
+    while (c < puzzle.cols && puzzle.layout[curR][c] === '#') c++;
+    if (c < puzzle.cols && puzzle.layout[curR][c] !== '#') {
+      curC = c;
+    }
+  } else {
+    let r = curR + 1;
+    while (r < puzzle.rows && puzzle.layout[r][curC] === '#') r++;
+    if (r < puzzle.rows && puzzle.layout[r][curC] !== '#') {
+      curR = r;
+    }
+  }
 
-  // Keep hint visible
-  updateCurrentClue(puzzle, r, c);
+  // keep word highlight + clue in sync
+  setActiveWord(puzzle, curR, curC);
+}
+
+// Backspace behaviour: clear current cell, then move backwards
+function handleBackspace() {
+  if (!puzzle) return;
+
+  // 1) if current cell has a letter, just clear it and stay here
+  let cell = document.querySelector(`.cell[data-r="${curR}"][data-c="${curC}"]`);
+  if (cell && cell.textContent) {
+    cell.textContent = '';
+    setActiveWord(puzzle, curR, curC);
+    return;
+  }
+
+  // 2) otherwise, move one cell backward in the word
+  if (isAcross) {
+    let c = curC - 1;
+    while (c >= 0 && puzzle.layout[curR][c] === '#') c--;
+    if (c >= 0 && puzzle.layout[curR][c] !== '#') {
+      curC = c;
+    }
+  } else {
+    let r = curR - 1;
+    while (r >= 0 && puzzle.layout[r][curC] === '#') r--;
+    if (r >= 0 && puzzle.layout[r][curC] !== '#') {
+      curR = r;
+    }
+  }
+
+  // 3) clear the new cell we landed on
+  cell = document.querySelector(`.cell[data-r="${curR}"][data-c="${curC}"]`);
+  if (cell) {
+    cell.textContent = '';
+  }
+
+  setActiveWord(puzzle, curR, curC);
 }
 
 function placeLetter(ch){
@@ -430,7 +463,7 @@ function readGridString(){
     for (let c=0;c<cols;c++){
       if (puzzle.layout[r][c] === "#") { out += "#"; continue; }
       const cell = document.querySelector(`.cell[data-r="${r}"][data-c="${c}"]`);
-      const v = (cell?.textContent || "").toUpperCase().trim();
+      const v = getLetterAt(r,c);
       out += /^[A-Z]$/.test(v) ? v : "";
     }
   }
