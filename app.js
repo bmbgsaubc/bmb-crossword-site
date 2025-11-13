@@ -253,9 +253,6 @@ function buildKeys() {
     <div class="row letters r1"></div>
     <div class="row letters r2"></div>
     <div class="row letters r3"></div>
-    <div class="row controls">
-      <button type="button" id="key-clear">Clear</button>
-    </div>
   `;
 
   const rows = [
@@ -307,11 +304,6 @@ function buildKeys() {
   back.addEventListener('click', handleBackspace);
   r3.appendChild(back);
 
-  // Clear-current-word button in controls row
-  const clearBtn = document.getElementById('key-clear');
-  if (clearBtn) {
-    clearBtn.addEventListener('click', clearCurrentWord);
-  }
 }
 
 function putLetterAt(r, c, ch){
