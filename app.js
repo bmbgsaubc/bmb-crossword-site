@@ -284,7 +284,6 @@ function buildKeys() {
 
   // Clear current word
   const clearBtn = document.getElementById('key-clear');
-  clearBtn.addEventListener('mousedown', e => e.preventDefault());
   clearBtn.addEventListener('click', clearCurrentWord);
 }
 
@@ -434,25 +433,41 @@ function moveCursor(delta){
   setFocusCell(r, c);
 }
 
-// Clear current word (respects isAcross)
-function clearCurrentWord(){
-  if (!lastFocused) return;
-  const { r, c } = lastFocused;
-  if (isAcross){
-    let c0=c; while (c0-1>=0 && puzzle.layout[r][c0-1] !== "#") c0--;
-    let c1=c; while (c1+1<puzzle.cols && puzzle.layout[r][c1+1] !== "#") c1++;
-    for (let x=c0; x<=c1; x++){
+function clearCurrentWord() {
+  if (!puzzle) return;
+
+  const layout = puzzle.layout;
+  const rows = puzzle.rows;
+  const cols = puzzle.cols;
+  const r = curR;
+  const c = curC;
+
+  // If the cursor somehow sits on a block, bail
+  if (layout[r][c] === '#') return;
+
+  if (isAcross) {
+    let c0 = c, c1 = c;
+    while (c0 - 1 >= 0 && layout[r][c0 - 1] !== '#') c0--;
+    while (c1 + 1 < cols && layout[r][c1 + 1] !== '#') c1++;
+
+    for (let x = c0; x <= c1; x++) {
       const cell = document.querySelector(`.cell[data-r="${r}"][data-c="${x}"]`);
-      if (cell) cell.textContent = "";
+      if (cell) cell.textContent = '';
     }
   } else {
-    let r0=r; while (r0-1>=0 && puzzle.layout[r0-1][c] !== "#") r0--;
-    let r1=r; while (r1+1<puzzle.rows && puzzle.layout[r1+1][c] !== "#") r1++;
-    for (let y=r0; y<=r1; y++){
+    let r0 = r, r1 = r;
+    while (r0 - 1 >= 0 && layout[r0 - 1][c] !== '#') r0--;
+    while (r1 + 1 < rows && layout[r1 + 1][c] !== '#') r1++;
+
+    for (let y = r0; y <= r1; y++) {
       const cell = document.querySelector(`.cell[data-r="${y}"][data-c="${c}"]`);
-      if (cell) cell.textContent = "";
+      if (cell) cell.textContent = '';
     }
   }
+
+  // keep highlight + clue consistent
+  setActiveWord(puzzle, curR, curC);
+}
 }
 
 // Read grid into string for scoring
@@ -614,7 +629,12 @@ async function init(){
 
   // wire buttons as you already do
   S("btn-begin").onclick = beginFlow;
-  S("toggle").onclick = ()=>{ isAcross = !isAcross; };
+  S("toggle").onclick = () => {
+    isAcross = !isAcross;
+    if (puzzle) {
+      setActiveWord(puzzle, curR, curC);   // re-highlight + update clue
+    }
+  };  
   S("clear-word").onclick = clearCurrentWord;
   S("submit").onclick = submitFlow;
 
