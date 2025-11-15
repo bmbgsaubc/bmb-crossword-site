@@ -130,6 +130,8 @@ function buildGrid(layout){
     curC = +first.dataset.c;
     setActiveWord(puzzle, curR, curC);
   }
+
+  updateSubmitState();
 }
 
 // Calculate clue numbers for first letters
@@ -375,6 +377,7 @@ function handleLetterInput(ch) {
 
   // keep word highlight + clue in sync
   setActiveWord(puzzle, curR, curC);
+  updateSubmitState();
 }
 
 // Backspace behaviour: clear current cell, then move backwards
@@ -386,6 +389,7 @@ function handleBackspace() {
   if (cell && cell.textContent) {
     cell.textContent = '';
     setActiveWord(puzzle, curR, curC);
+    updateSubmitState();
     return;
   }
 
@@ -411,6 +415,7 @@ function handleBackspace() {
   }
 
   setActiveWord(puzzle, curR, curC);
+  updateSubmitState();
 }
 
 function placeLetter(ch){
@@ -421,6 +426,7 @@ function placeLetter(ch){
   if (!cell) return;
   cell.textContent = ch;
   advanceCursor();
+  updateSubmitState();
 }
 function backspaceLetter(){
   if (!lastFocused) return;
@@ -435,6 +441,7 @@ function backspaceLetter(){
     const prev = document.querySelector(`.cell[data-r="${lastFocused.r}"][data-c="${lastFocused.c}"]`);
     if (prev) prev.textContent = "";
   }
+  updateSubmitState();
 }
 function advanceCursor(){ moveCursor(+1); }
 function moveCursor(delta){
@@ -486,6 +493,7 @@ function clearCurrentWord() {
 
   // keep highlight + clue consistent
   setActiveWord(puzzle, curR, curC);
+  updateSubmitState();
 }
 
 // Read grid into string for scoring
@@ -501,6 +509,23 @@ function readGridString(){
     }
   }
   return out;
+}
+
+function isGridFullyFilled(){
+  if (!puzzle) return false;
+  const { rows, cols, layout } = puzzle;
+  for (let r = 0; r < rows; r++){
+    for (let c = 0; c < cols; c++){
+      if (layout[r][c] === "#") continue;
+      if (!getLetterAt(r, c)) return false;
+    }
+  }
+  return true;
+}
+function updateSubmitState(){
+  const btn = S("submit");
+  if (!btn) return;
+  btn.disabled = !isGridFullyFilled();
 }
 
 // ===== Server calls (Google Apps Script) =====
