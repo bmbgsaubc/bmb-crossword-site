@@ -532,6 +532,12 @@ function formatMs(ms){
   const d = t%10, s = Math.floor(t/10)%60, m = Math.floor(t/600);
   return `${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}.${d}`;
 }
+function formatElapsedMs(ms){
+  const totalSeconds = Math.round(ms / 1000);
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+}
 function startTimer(){
   msElapsed = 0;
   S("timer").style.display = "inline-block";
@@ -585,7 +591,7 @@ async function submitFlow(){
     : null;
   try{
     const fin = await post("finishAttempt", { attemptId, userGridString, percentCorrect });
-    S("result").textContent = `You got ${fin.percentCorrect}% correct. Official time: ${(fin.elapsedMs/1000).toFixed(1)} s`;
+    S("result").textContent = `You got ${fin.percentCorrect}% correct. Official time: ${formatElapsedMs(fin.elapsedMs)}`;
   }catch(e){ logErr(e.message); }
 }
 
