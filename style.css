@@ -14,7 +14,7 @@ main { max-width: 900px; margin: 0 auto; padding: 12px; }
 #overlayMsg { color:#b00; font-size:0.9rem; min-height: 1.2em; }
 
 /* ===== Timer ===== */
-.timer { position: sticky; top: 0; background:#ffffff; color:#000000; padding:6px 10px; border-radius:6px; display:inline-block; font-variant-numeric: tabular-nums; }
+.timer { position: sticky; top: 0; background:#ffffff; color:#000000; padding:6px 6px; border-radius:6px; display:inline-block; font-variant-numeric: tabular-nums; }
 
 /* ===== Layout blocks ===== */
 #puzzle { margin: 10px 0; }

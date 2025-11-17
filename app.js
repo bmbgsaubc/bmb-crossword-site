@@ -570,7 +570,7 @@ function formatElapsedMs(ms){
 function startTimer(){
   msElapsed = 0;
   S("timer").style.display = "inline-block";
-  S("timer").textContent = "00:00.0";
+  S("timer").textContent = "00:00";
   timerHandle = setInterval(()=> {
     msElapsed += 100;
     S("timer").textContent = formatMs(msElapsed);
