@@ -42,6 +42,10 @@ function validatePuzzle(p){
     if (/[^A-Za-z#]/.test(p.layout[i])) throw new Error(`Row ${i+1} invalid chars (A–Z or '#').`);
   }
   p.rows = rows; p.cols = cols;
+  if (!p.solutionString) {
+    // Flatten layout into a single string so scoring works even if JSON omits solutionString.
+    p.solutionString = p.layout.join("").toUpperCase();
+  }
   return p;
 }
 async function loadPuzzleJson(id){
