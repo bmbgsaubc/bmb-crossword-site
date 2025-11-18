@@ -689,7 +689,8 @@ async function init(){
       setActiveWord(puzzle, curR, curC);   // re-highlight + update clue
     }
   };  
-  S("clear-word").onclick = clearCurrentWord;
+  const clearWordBtn = S("clear-word");
+  if (clearWordBtn) clearWordBtn.onclick = clearCurrentWord;
   S("submit").onclick = submitFlow;
 
   // Resize handling
