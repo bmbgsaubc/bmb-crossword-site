@@ -618,6 +618,7 @@ async function submitFlow(){
   const percentCorrect = puzzle.solutionString
     ? computePercent(userGridString, puzzle.solutionString) // if you included solution in JSON
     : null;
+  S("result").textContent = "Scoring your answers...";
   try{
     const fin = await post("finishAttempt", { attemptId, userGridString, percentCorrect });
     S("result").textContent = `You got ${fin.percentCorrect}% correct. Official time: ${formatElapsedMs(fin.elapsedMs)}`;
