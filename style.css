@@ -9,16 +9,18 @@ main { max-width: 900px; margin: 0 auto; padding: 2px 12px 12px; }
 
 /* ===== Overlay (name, student#, email, lab, Begin) ===== */
 .overlay { position: fixed; inset: 0; background: rgba(0,0,0,.6); display: flex; align-items: center; justify-content: center; z-index: 1000; }
-.overlay .card { background:#fff; padding:16px; border-radius:10px; width:min(420px, 92vw); display:flex; flex-direction:column; gap:8px; }
-.overlay input { padding:10px; font-size:16px; } /* >=16px prevents iOS zoom on focus */
+.overlay .card { background:#fff; padding:16px; border-radius:10px; width:min(420px, 76vw); display:flex; flex-direction:column; gap:8px; }
+.overlay input { padding:10px; font-size:14px; } /* >=16px prevents iOS zoom on focus */
 .overlay button {
   padding: 14px 10px;
-  font-size: 20px;
-  font-weight: 400;
-  color: #ffffff;
+  font-size: 18px;
+  font-weight: 800;
+  color: #000000;
   border-radius: 8px;
-  background: #0f5fff;
+  border: 1px solid #9d9d9d;
+  background: #f2f2f2;
 }
+
 #overlayMsg { color:#b00; font-size:0.9rem; min-height: 1.2em; }
 
 /* ===== Timer ===== */
