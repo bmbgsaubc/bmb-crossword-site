@@ -106,7 +106,7 @@ main { max-width: 900px; margin: 0 auto; padding: 2px 12px 12px; }
   touch-action: manipulation;  /* stop double-tap zoom while typing */
 }
 .softkeys .controls button {
-  padding: 6px 8px;
+  padding: 10px 8px;
   font-size: 14px;
   border-radius: 6px;
   border: 1px solid #c7cbd1;
@@ -118,18 +118,11 @@ main { max-width: 900px; margin: 0 auto; padding: 2px 12px 12px; }
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 4px 12px 0;
-}
-
-
-.logo-bar {
-  display: flex;
-  justify-content: flex-end;
-  padding: 6px 12px 0;
+  padding: 3px 12px 3px;
 }
 
 .gsa-logo {
-  width: 40px;  /* adjust as needed */
+  width: 50px;  /* adjust as needed */
   height: auto;
 }
 
