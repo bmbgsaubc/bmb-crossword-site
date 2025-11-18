@@ -13,10 +13,11 @@ main { max-width: 900px; margin: 0 auto; padding: 2px 12px 12px; }
 .overlay input { padding:10px; font-size:16px; } /* >=16px prevents iOS zoom on focus */
 .overlay button {
   padding: 14px 10px;
-  font-size: 16px;
+  font-size: 20px;
+  font-weight: 400;
+  color: #ffffff;
   border-radius: 8px;
-  border: 1px solid #c7cbd1;
-  background: #f7f7f9;
+  background: #0f5fff;
 }
 #overlayMsg { color:#b00; font-size:0.9rem; min-height: 1.2em; }
 
