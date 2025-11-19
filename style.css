@@ -136,6 +136,12 @@ main { max-width: 900px; margin: 0 auto; padding: 2px 12px 12px; }
   height: auto;
 }
 
+@media (min-width: 801px) {
+  .softkeys {
+    display: none;
+  }
+}
+
 
 /* ===== Desktop: clues on the right ===== */
 .play { display:grid; grid-template-columns: minmax(0,1fr) 320px; gap:20px; align-items:start; }

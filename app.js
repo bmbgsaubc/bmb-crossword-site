@@ -10,6 +10,10 @@ let curR = 0, curC = 0; // current cursor (row, col)
 
 // minimal config (index.html sets window.CONFIG)
 const CFG = window.CONFIG;
+const MOBILE_QUERY = typeof window.matchMedia === "function"
+  ? window.matchMedia("(max-width: 800px)")
+  : null;
+const isMobileView = () => MOBILE_QUERY ? MOBILE_QUERY.matches : window.innerWidth <= 800;
 
 // Log to UI + console
 function logErr(msg, err){
@@ -61,7 +65,10 @@ function applyPhoneWidthSizing(rows, cols) {
   const wrap = document.getElementById('grid-wrap') || S('grid');
   if (!wrap) return;
   const vw = window.visualViewport ? window.visualViewport.width : window.innerWidth;
-  const wrapW = Math.floor(vw);
+  const isMobile = isMobileView();
+  const parentWidth = wrap.parentElement ? wrap.parentElement.clientWidth : wrap.clientWidth || vw;
+  const availableDesktopWidth = Math.min(parentWidth || vw, vw - 40);
+  const wrapW = Math.floor(isMobile ? vw : Math.max(240, availableDesktopWidth));
   const cell = Math.max(18, Math.floor(wrapW / cols));
   document.documentElement.style.setProperty('--cell', cell + 'px');
   wrap.style.width  = wrapW + 'px';
@@ -254,6 +261,13 @@ function buildKeys() {
   const wrap = document.getElementById('softkeys');
   if (!wrap) return;
 
+  if (!isMobileView()) {
+    wrap.innerHTML = "";
+    wrap.setAttribute("aria-hidden", "true");
+    return;
+  }
+  wrap.removeAttribute("aria-hidden");
+
   // Clear any previous keyboard
   wrap.innerHTML = `
     <div class="row letters r1"></div>
@@ -355,6 +369,24 @@ function movePrevCell(){
   setActiveWord(puzzle, curR, curC);
 }
 
+function moveCursorByDelta(dr, dc) {
+  if (!puzzle) return;
+  let r = curR;
+  let c = curC;
+  while (true) {
+    r += dr;
+    c += dc;
+    if (r < 0 || c < 0 || r >= puzzle.rows || c >= puzzle.cols) {
+      return;
+    }
+    if (puzzle.layout[r][c] === '#') continue;
+    curR = r;
+    curC = c;
+    setActiveWord(puzzle, curR, curC);
+    return;
+  }
+}
+
 function handleLetterInput(ch) {
   if (!puzzle) return;
 
@@ -420,6 +452,57 @@ function handleBackspace() {
 
   setActiveWord(puzzle, curR, curC);
   updateSubmitState();
+}
+
+function handlePhysicalKey(e) {
+  if (!puzzle) return;
+  const overlayVisible = (() => {
+    const overlay = S("overlay");
+    return overlay && overlay.style.display !== "none";
+  })();
+  if (overlayVisible) return;
+
+  const active = document.activeElement;
+  if (active && (active.tagName === "INPUT" || active.tagName === "TEXTAREA" || active.isContentEditable)) {
+    return;
+  }
+
+  const key = e.key;
+  if (/^[a-zA-Z]$/.test(key)) {
+    e.preventDefault();
+    handleLetterInput(key.toUpperCase());
+    return;
+  }
+  switch (key) {
+    case "Backspace":
+    case "Delete":
+      e.preventDefault();
+      handleBackspace();
+      break;
+    case "ArrowRight":
+      e.preventDefault();
+      moveCursorByDelta(0, 1);
+      break;
+    case "ArrowLeft":
+      e.preventDefault();
+      moveCursorByDelta(0, -1);
+      break;
+    case "ArrowUp":
+      e.preventDefault();
+      moveCursorByDelta(-1, 0);
+      break;
+    case "ArrowDown":
+      e.preventDefault();
+      moveCursorByDelta(1, 0);
+      break;
+    case " ":
+      e.preventDefault();
+      isAcross = !isAcross;
+      if (puzzle) setActiveWord(puzzle, curR, curC);
+      break;
+    default:
+      break;
+  }
 }
 
 function placeLetter(ch){
@@ -692,11 +775,17 @@ async function init(){
   const clearWordBtn = S("clear-word");
   if (clearWordBtn) clearWordBtn.onclick = clearCurrentWord;
   S("submit").onclick = submitFlow;
+  document.addEventListener("keydown", handlePhysicalKey);
 
   // Resize handling
-  window.addEventListener('resize', () => { if (puzzle) applyPhoneWidthSizing(puzzle.rows, puzzle.cols); });
+  window.addEventListener('resize', () => {
+    if (puzzle) applyPhoneWidthSizing(puzzle.rows, puzzle.cols);
+    buildKeys();
+  });
   if (window.visualViewport) {
-    window.visualViewport.addEventListener('resize', () => { if (puzzle) applyPhoneWidthSizing(puzzle.rows, puzzle.cols); });
+    window.visualViewport.addEventListener('resize', () => {
+      if (puzzle) applyPhoneWidthSizing(puzzle.rows, puzzle.cols);
+    });
   }
   console.log("App initialized");
 }
