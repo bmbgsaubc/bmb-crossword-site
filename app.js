@@ -5,6 +5,7 @@ let attemptId = null;
 let isAcross = true;
 let timerHandle = null;
 let msElapsed = 0;
+let timerStartTime = null;
 let lastFocused = null; // {r,c}
 let curR = 0, curC = 0; // current cursor (row, col)
 
@@ -651,16 +652,21 @@ function formatElapsedMs(ms){
   return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
 }
 function startTimer(){
+  // Reset and ensure we never accumulate multiple intervals from double-clicks
+  stopTimer();
   msElapsed = 0;
+  timerStartTime = performance.now();
   S("timer").style.display = "inline-block";
   S("timer").textContent = "00:00";
   timerHandle = setInterval(()=> {
-    msElapsed += 100;
+    // use wall clock so the display stays accurate even if intervals aren't
+    msElapsed = Math.max(0, performance.now() - timerStartTime);
     S("timer").textContent = formatMs(msElapsed);
   }, 100);
 }
 function stopTimer(){
   if (timerHandle) { clearInterval(timerHandle); timerHandle = null; }
+  timerStartTime = null;
 }
 
 // ===== Flows =====
