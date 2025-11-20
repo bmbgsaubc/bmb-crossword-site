@@ -1,27 +1,53 @@
 {
   "weekId": "2025-W48",
-  "title": "Blank Template",
-  "rows": 15,
-  "cols": 15,
+  "title": "Common Sense",
+  "rows": 13,
+  "cols": 13,
   "layout": [
-    "AAAAAAAAAAAAAAA",
-    "AAAAAAAAAAAAAAA",
-    "AAAAAAAAAAAAAAA",
-    "AAAAAAAAAAAAAAA",
-    "AAAAAAAAAAAAAAA",
-    "AAAAAAAAAAAAAAA",
-    "AAAAAAAAAAAAAAA",
-    "AAAAAAAAAAAAAAA",
-    "AAAAAAAAAAAAAAA",
-    "AAAAAAAAAAAAAAA",
-    "AAAAAAAAAAAAAAA",
-    "AAAAAAAAAAAAAAA",
-    "AAAAAAAAAAAAAAA",
-    "AAAAAAAAAAAAAAA",
-    "AAAAAAAAAAAAAAA"
+    "#STAKE#FLOPPY",
+    "A#U#I#F#U#O#A",
+    "CUTANDRUN#CUR",
+    "I#O#G#E#C#K#N",
+    "DARED#ECHOES#",
+    "S###O#A###T##",
+    "#COMMONSENSE#",
+    "##N###D#M###A",
+    "#OPPOSE#POSED",
+    "C#A#R#A#E#T#A",
+    "HAP#ASSERTING",
+    "E#E#T#Y#O#N#E",
+    "WARMED#BRAKE#"
   ],
   "clues": {
-    "across": {},
-    "down": {}
+    "across": {
+      "1A": "Post (5)",
+      "4A": "Tending to hang loosely (6)",
+      "10A": "Make a hasty escape (3,3,3)",
+      "11A": "Despicable person (3)",
+      "12A": "Risked (5)",
+      "13A": "Sound repetitions (6)",
+      "14A": "Basic intelligence (6,5)",
+      "18A": "Resist (6)",
+      "20A": "Sat (5)",
+      "23A": "Chance (3)",
+      "24A": "Avowing (9)",
+      "25A": "Heated up (6)",
+      "26A": "Slow down (5)"
+    },
+    "down": {
+      "2D": "Private educator (5)",
+      "3D": "Realm (7)",
+      "5D": "Midday meal (5)",
+      "6D": "Pouches on a garment (7)",
+      "7D": "Spun knitting thread (4)",
+      "8D": "They counteract alkalis (5)",
+      "9D": "Informal; relaxed (4,3,4)",
+      "15D": "In writing (2,5)",
+      "16D": "Penguin, perhaps (7)",
+      "17D": "Saying (5)",
+      "19D": "Declaim (5)",
+      "21D": "Stench (5)",
+      "22D": "Masticate (4)"
+    }
   }
 }
