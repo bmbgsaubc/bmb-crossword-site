@@ -45,8 +45,9 @@
     "down": {
       "1D": "A computational simulation, e.g.",
       "2D": "You're going to image that WITHOUT light!?",
-      "3D": "Well-known signaling kinase (abbr.)",
-      "4D": "= kcat * [E]t",
+      "3D": "Emission at 509 nm (abbr.)",
+      "4D": "Well-known signaling kinase (abbr.)",
+      "5D": "= kcat * [E]t",
       "6D": "LC/__ (abbr.)",
       "8D": "Non-uniform",
       "11D": "What your results will never actually show",
