@@ -717,7 +717,7 @@ async function submitFlow(){
       solutionString: puzzle.solutionString, // optional: if you prefer server fetch, drop this
       percentCorrect
     });
-    S("result").textContent = `You got ${fin.percentCorrect}% correct. Official time: ${formatElapsedMs(fin.elapsedMs)}. Check email for your completed crossword.`;
+    S("result").textContent = `You got ${fin.percentCorrect}% correct. Official time: ${formatElapsedMs(fin.elapsedMs)}. Check email/junk folder for your completed crossword.`;
   }catch(e){ logErr(e.message); }
 }
 
