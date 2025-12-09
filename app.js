@@ -340,6 +340,51 @@ function getLetterAt(r, c){
   return (cell?.textContent || '').toUpperCase();
 }
 
+function getWordStart(p, r, c, across){
+  let rr = r, cc = c;
+  if (across) {
+    while (cc - 1 >= 0 && p.layout[rr][cc - 1] !== "#") cc--;
+  } else {
+    while (rr - 1 >= 0 && p.layout[rr - 1][cc] !== "#") rr--;
+  }
+  return { r: rr, c: cc };
+}
+
+function getWordStartsByDirection(p, across){
+  const key = across ? "_acrossStarts" : "_downStarts";
+  if (p[key]) return p[key];
+  const starts = [];
+  for (let r = 0; r < p.rows; r++){
+    for (let c = 0; c < p.cols; c++){
+      if (p.layout[r][c] === "#") continue;
+      const startsAcross = (c === 0 || p.layout[r][c - 1] === "#") && (c + 1 < p.cols && p.layout[r][c + 1] !== "#");
+      const startsDown = (r === 0 || p.layout[r - 1][c] === "#") && (r + 1 < p.rows && p.layout[r + 1][c] !== "#");
+      if (across && startsAcross) starts.push({ r, c });
+      if (!across && startsDown) starts.push({ r, c });
+    }
+  }
+  p[key] = starts;
+  return starts;
+}
+
+function findNextWordStart(p, startR, startC, across){
+  const starts = getWordStartsByDirection(p, across);
+  const idx = starts.findIndex(pos => pos.r === startR && pos.c === startC);
+  if (idx >= 0 && idx + 1 < starts.length) return starts[idx + 1];
+  return null;
+}
+
+function stepForwardInWord(p, r, c, across){
+  if (across){
+    const nc = c + 1;
+    if (nc < p.cols && p.layout[r][nc] !== "#") return { r, c: nc };
+  } else {
+    const nr = r + 1;
+    if (nr < p.rows && p.layout[nr][c] !== "#") return { r: nr, c };
+  }
+  return null;
+}
+
 function moveNextCell(){
   const rows = puzzle.rows, cols = puzzle.cols;
   let r = curR, c = curC;
@@ -398,17 +443,16 @@ function handleLetterInput(ch) {
   }
 
   // move forward in the current direction
-  if (isAcross) {
-    let c = curC + 1;
-    while (c < puzzle.cols && puzzle.layout[curR][c] === '#') c++;
-    if (c < puzzle.cols && puzzle.layout[curR][c] !== '#') {
-      curC = c;
-    }
+  const currentStart = getWordStart(puzzle, curR, curC, isAcross);
+  const nextCell = stepForwardInWord(puzzle, curR, curC, isAcross);
+  if (nextCell) {
+    curR = nextCell.r;
+    curC = nextCell.c;
   } else {
-    let r = curR + 1;
-    while (r < puzzle.rows && puzzle.layout[r][curC] === '#') r++;
-    if (r < puzzle.rows && puzzle.layout[r][curC] !== '#') {
-      curR = r;
+    const nextWord = findNextWordStart(puzzle, currentStart.r, currentStart.c, isAcross);
+    if (nextWord) {
+      curR = nextWord.r;
+      curC = nextWord.c;
     }
   }
 
