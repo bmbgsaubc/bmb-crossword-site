@@ -591,6 +591,16 @@ function moveCursor(delta){
   setFocusCell(r, c);
 }
 
+function jumpToNextWord(){
+  if (!puzzle) return;
+  const start = getWordStart(puzzle, curR, curC, isAcross);
+  const next = findNextWordStart(puzzle, start.r, start.c, isAcross);
+  if (!next) return;
+  curR = next.r;
+  curC = next.c;
+  setActiveWord(puzzle, curR, curC);
+}
+
 function clearCurrentWord() {
   if (!puzzle) return;
 
@@ -830,6 +840,8 @@ async function init(){
       setActiveWord(puzzle, curR, curC);   // re-highlight + update clue
     }
   };  
+  const nextWordBtn = S("next-word");
+  if (nextWordBtn) nextWordBtn.onclick = jumpToNextWord;
   const clearWordBtn = S("clear-word");
   if (clearWordBtn) clearWordBtn.onclick = clearCurrentWord;
   S("submit").onclick = submitFlow;
