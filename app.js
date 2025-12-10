@@ -197,6 +197,23 @@ function updateCurrentClue(p, r, c) {
     const prefix = clueNum ? `${clueNum}${dirLabel}` : dirLabel;
     el.textContent = clueText ? `${prefix} — ${clueText}` : prefix;
     el.style.display = 'block';
+    fitClueText(el);
+  }
+}
+
+// Keep the clue bar to one line by shrinking the font if needed
+function fitClueText(el) {
+  if (!el) return;
+  if (!el.dataset.baseFontSize) {
+    el.dataset.baseFontSize = String(parseFloat(getComputedStyle(el).fontSize) || 14);
+  }
+  const baseSize = parseFloat(el.dataset.baseFontSize);
+  const minSize = 10;
+  let size = baseSize;
+  el.style.fontSize = `${size}px`;
+  while (el.scrollWidth > el.clientWidth && size > minSize) {
+    size -= 0.5; // step down until it fits
+    el.style.fontSize = `${size}px`;
   }
 }
 
@@ -851,10 +868,12 @@ async function init(){
   window.addEventListener('resize', () => {
     if (puzzle) applyPhoneWidthSizing(puzzle.rows, puzzle.cols);
     buildKeys();
+    fitClueText(S("current-clue"));
   });
   if (window.visualViewport) {
     window.visualViewport.addEventListener('resize', () => {
       if (puzzle) applyPhoneWidthSizing(puzzle.rows, puzzle.cols);
+      fitClueText(S("current-clue"));
     });
   }
   console.log("App initialized");

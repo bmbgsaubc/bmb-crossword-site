@@ -77,14 +77,18 @@ main { max-width: 900px; margin: 0 auto; padding: 2px 12px 12px; }
   font-size: 14px;
   line-height: 1.35;
   margin: 8px 0 6px;  /* sits above the controls */
+  white-space: nowrap;            /* keep a single-line bar */
+  overflow: hidden;               /* prevent the bar from growing taller */
+  text-overflow: ellipsis;        /* fallback if text cannot shrink enough */
+  min-height: calc(14px * 1.35);  /* consistent height even for short clues */
 }
 
 /* ===== Controls/buttons BELOW the hint ===== */
 .controls { display:flex; gap:6px; margin: 6px 0 10px; }
 .controls button {
   flex: 1;
-  padding: 6px 10px;          /* smaller per your request */
-  font-size: 13px;            /* smaller */
+  padding: 9px 12px;          /* slightly taller */
+  font-size: 13px;
   line-height: 1.1;
   border-radius: 6px;
   border: 1px solid #c7cbd1;
@@ -185,5 +189,5 @@ main { max-width: 900px; margin: 0 auto; padding: 2px 12px 12px; }
 
   /* buttons already small; keep spacing tight */
   .controls { gap:6px; }
-  .controls button { padding:6px 8px; font-size:13px; }
+  .controls button { padding:8px 10px; font-size:13px; }
 }
