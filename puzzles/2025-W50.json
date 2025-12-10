@@ -28,7 +28,7 @@
       "12A": "Stand up",
       "13A": "A ____tor serves as an enzyme's helper molecule",
       "17A": "____ Zurich",
-      "18A": "This U.S. science funding body does not support clinical trials (abbr.)",
+      "18A": "Funding body not supporting clinical trials (abbr.)",
       "19A": "Woman predecessor",
       "20A": "'It's not working for some reason!'",
       "22A": "Composed of unlike parts",
@@ -40,7 +40,7 @@
       "34A": "Protein-coding stretch of DNA (abbr.)",
       "36A": "Captain of the Nautilus",
       "38A": "Steer clear of",
-      "39A": "Involving rotation axes and mirror planes in crystallography",
+      "39A": "Involves rotation axes and mirror planes in crystallography",
       "40A": "'But what's the point of this?'"
     },
     "down": {
@@ -51,9 +51,9 @@
       "6D": "Jason's ship in Greek mythology",
       "8D": "Place to relax",
       "9D": "What glycogen and phylogenetic trees do",
-      "11D": "'Plinko'-like technique to separate molecules based on size (abbr.)",
+      "11D": "Separate molecules based on size (abbr.)",
       "13D": "Cancer therapy, informally",
-      "14D": "Documents that mysteriously breed in admin ecosystems",
+      "14D": "Admin documents that mysteriously breed",
       "15D": "What Michaelis-Menten plots generate",
       "16D": "10^3",
       "17D": "'if' statement that catches your mistakes",
@@ -68,7 +68,7 @@
       "31D": "CTRL+Z",
       "33D": "A water damaged phones resting place",
       "34D": "Exceeding the limit",
-      "35D": "Relic still used by one inexplicably ancient collaborator",
+      "35D": "Relic still used by ancient collaborator",
       "37D": "'Dopesick' drug, for short"
     }
   }
