@@ -189,5 +189,5 @@ main { max-width: 900px; margin: 0 auto; padding: 2px 12px 12px; }
 
   /* buttons already small; keep spacing tight */
   .controls { gap:6px; }
-  .controls button { padding:8px 10px; font-size:13px; }
+  .controls button { padding:10px 10px; font-size:13px; }
 }
