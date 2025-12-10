@@ -190,12 +190,12 @@ function updateCurrentClue(p, r, c) {
   const bucket = isAcross ? (p.clues?.across || {}) : (p.clues?.down || {});
   const key1 = `${clueNum}${isAcross ? 'A' : 'D'}`;
   const clueText = bucket[key1] ?? bucket[clueNum] ?? '';
+  const dirLabel = isAcross ? 'A' : 'D';
 
   const el = document.getElementById('current-clue');
   if (el) {
-    el.textContent = clueText
-      ? `${clueNum} ${isAcross ? 'Across' : 'Down'} — ${clueText}`
-      : `${isAcross ? 'Across' : 'Down'}`;
+    const prefix = clueNum ? `${clueNum}${dirLabel}` : dirLabel;
+    el.textContent = clueText ? `${prefix} — ${clueText}` : prefix;
     el.style.display = 'block';
   }
 }
