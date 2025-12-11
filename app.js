@@ -8,6 +8,8 @@ let msElapsed = 0;
 let timerStartTime = null;
 let lastFocused = null; // {r,c}
 let curR = 0, curC = 0; // current cursor (row, col)
+let isStartingAttempt = false; // gate duplicate "Begin" clicks
+let hasStartedAttempt = false; // prevent re-starting once begun
 
 // minimal config (index.html sets window.CONFIG)
 const CFG = window.CONFIG;
@@ -742,12 +744,28 @@ function stopTimer(){
 
 // ===== Flows =====
 async function beginFlow(){
+  const beginBtn = S("btn-begin");
+  if (hasStartedAttempt || isStartingAttempt) return;
+  isStartingAttempt = true;
+  if (beginBtn) {
+    beginBtn.disabled = true;
+    beginBtn.textContent = "Starting...";
+  }
+  const resetBeginBtn = () => {
+    isStartingAttempt = false;
+    if (!hasStartedAttempt && beginBtn) {
+      beginBtn.disabled = false;
+      beginBtn.textContent = "Begin and Start Timer";
+    }
+  };
+
   const name = S("f-name").value.trim();
   const student = S("f-student").value.trim();
   const email = S("f-email").value.trim();
   const lab = S("f-lab").value.trim();
   if (!name || !student || !email || !lab) {
     S("overlayMsg").textContent = "Please fill all fields.";
+    resetBeginBtn();
     return;
   }
 
@@ -757,14 +775,22 @@ async function beginFlow(){
       puzzle = await loadPuzzleJson(CFG.weekId);
       buildGrid(puzzle.layout);
       buildKeys();
-    } catch (e) { return logErr(e.message); }
+    } catch (e) {
+      resetBeginBtn();
+      return logErr(e.message);
+    }
   }
 
   // Start attempt on server
   try {
     const st = await post("startAttempt", { weekId: CONFIG.weekId, name, studentNumber: student, email, lab });
     attemptId = st.attemptId;
-  } catch (e) { return logErr(e.message); }
+    hasStartedAttempt = true;
+    isStartingAttempt = false;
+  } catch (e) {
+    resetBeginBtn();
+    return logErr(e.message);
+  }
 
   // Hide overlay + start timer
   S("overlay").style.display = "none";
