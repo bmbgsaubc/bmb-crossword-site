@@ -19,9 +19,18 @@ const MOBILE_QUERY = typeof window.matchMedia === "function"
 const isMobileView = () => MOBILE_QUERY ? MOBILE_QUERY.matches : window.innerWidth <= 800;
 
 // Log to UI + console
+function getMessageTarget(){
+  const overlay = S("overlay");
+  const overlayMsg = S("overlayMsg");
+  const result = S("result");
+  const overlayVisible = overlay && overlay.style.display !== "none";
+  if (overlayVisible) return overlayMsg || result;
+  return result || overlayMsg;
+}
+
 function logErr(msg, err){
   console.error(msg, err || "");
-  const el = S("overlayMsg") || S("result");
+  const el = getMessageTarget();
   if (el) el.textContent = msg;
 }
 
@@ -695,11 +704,25 @@ async function post(action, payload){
   body.set("action", action);
   body.set("payload", JSON.stringify(payload));
 
-  const res = await fetch(CFG.api, {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded;charset=utf-8" },
-    body
-  });
+  const controller = new AbortController();
+  const timeoutMs = 15000;
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  let res;
+  try {
+    res = await fetch(CFG.api, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded;charset=utf-8" },
+      body,
+      signal: controller.signal
+    });
+  } catch (err) {
+    if (err && err.name === "AbortError") {
+      throw new Error("Request timed out. Please try again.");
+    }
+    throw err;
+  } finally {
+    clearTimeout(timeout);
+  }
 
   const txt = await res.text();
   let data;
@@ -799,6 +822,14 @@ async function beginFlow(){
 
 async function submitFlow(){
   if (!attemptId) return logErr("Click Begin first.");
+  const submitBtn = S("submit");
+  const priorText = submitBtn ? submitBtn.textContent : "";
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Submitting...";
+  }
+  const resultEl = S("result");
+  if (resultEl) resultEl.textContent = "Submitting...";
   stopTimer();
   const userGridString = readGridString();
   const percentCorrect = puzzle.solutionString
@@ -815,7 +846,16 @@ async function submitFlow(){
       percentCorrect
     });
     S("result").textContent = `You got ${fin.percentCorrect}% correct. Official time: ${formatElapsedMs(fin.elapsedMs)}. Check email/junk folder for your completed crossword.`;
+    if (submitBtn) {
+      submitBtn.textContent = "Submitted";
+    }
   }catch(e){ logErr(e.message); }
+  finally {
+    if (submitBtn && submitBtn.textContent !== "Submitted") {
+      submitBtn.disabled = false;
+      submitBtn.textContent = priorText || "Submit";
+    }
+  }
 }
 
 function computePercent(user, sol){
