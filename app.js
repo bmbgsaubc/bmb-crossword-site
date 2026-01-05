@@ -830,9 +830,9 @@ function computePercent(user, sol){
 // ===== Init =====
 async function init(){
   try {
-    // 1) Read query param (?p=ID), else use manifest default
+    // 1) Read query param (?p=ID / ?puzzle=ID / ?puzzles=ID), else use manifest default
     const params = new URLSearchParams(location.search);
-    const fromUrl = params.get('p'); // new param "p"
+    const fromUrl = params.get('p') || params.get('puzzle') || params.get('puzzles');
     const manifest = await loadManifest();
 
     const all = (manifest.puzzles || []);
