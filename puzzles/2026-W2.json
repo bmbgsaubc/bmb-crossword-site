@@ -6,7 +6,7 @@
   "layout": [
     "Y#CPUS##M#U###R",
     "Y#O#S#KNELT#MSG",
-    "ZONES#A#R#R#I#B",
+    "ZONES#A#T#R#I#B",
     "##F#R#YEAR##N##",
     "SHIP#R#S##I#TBS",
     "##G#PORTSIDES#Y",
@@ -58,7 +58,7 @@
       "14D": "Not in use",
       "16D": "Interconnected parts",
       "20D": "Flash-cook the outside",
-      "21D": "Space to work with",
+      "21D": "= l x w",
       "22D": "Opposites of lows",
       "23D": "Raptor’s grip",
       "26D": "Eliminate",
