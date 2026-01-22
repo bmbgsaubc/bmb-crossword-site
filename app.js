@@ -981,12 +981,22 @@ async function submitFlow(){
 }
 
 function computePercent(user, sol){
-  const U = user.toUpperCase(), S = sol.toUpperCase();
-  let total=0, correct=0;
-  for (let i=0;i<S.length;i++){
-    if (S[i] !== "#") { total++; if (U[i] && U[i]===S[i]) correct++; }
+  const U = user.toUpperCase();
+  const S = sol.toUpperCase();
+  let total = 0, correct = 0;
+
+  for (let i = 0; i < S.length; i++) {
+    if (S[i] === "#") continue;   // skip blocks
+
+    total++;
+
+    // count only real letters that match
+    if (U[i] !== "." && U[i] === S[i]) {
+      correct++;
+    }
   }
-  return total ? Math.round(100*correct/total) : 0;
+
+  return total ? Math.round(100 * correct / total) : 0;
 }
 
 // ===== Init =====
