@@ -795,13 +795,13 @@ function formatElapsedMs(ms){
   const seconds = totalSeconds % 60;
   return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
 }
-function startTimer(){
+function startTimer(reset){
   // Reset and ensure we never accumulate multiple intervals from double-clicks
   stopTimer();
-  msElapsed = 0;
-  timerStartTime = performance.now();
+  if (reset) msElapsed = 0;
+  timerStartTime = performance.now() - msElapsed;
   S("timer").style.display = "inline-block";
-  S("timer").textContent = "00:00";
+  S("timer").textContent = formatMs(msElapsed);
   timerHandle = setInterval(()=> {
     // use wall clock so the display stays accurate even if intervals aren't
     msElapsed = Math.max(0, performance.now() - timerStartTime);
@@ -819,6 +819,9 @@ function pauseGame(){
   pauseStartMs = Date.now();
   const btn = S("pause");
   if (btn) btn.textContent = "Resume";
+  if (timerStartTime) {
+    msElapsed = Math.max(0, performance.now() - timerStartTime);
+  }
   stopTimer();                // stops display timer only
   document.body.classList.add("paused");
   saveProgress();             // optional
@@ -831,7 +834,7 @@ function resumeGame(){
   pauseStartMs = 0;
   const btn = S("pause");
   if (btn) btn.textContent = "Pause";
-  startTimer();               // resumes display timer
+  startTimer(false);          // resumes display timer
   document.body.classList.remove("paused");
 }
 
@@ -917,7 +920,7 @@ async function beginFlow(){
 
   // Hide overlay + start timer
   S("overlay").style.display = "none";
-  startTimer();
+  startTimer(true);
 }
 
 async function submitFlow(){
