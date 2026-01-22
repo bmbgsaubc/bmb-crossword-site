@@ -677,15 +677,16 @@ function clearCurrentWord() {
 function readGridString(){
   const rows = puzzle.rows, cols = puzzle.cols;
   let out = "";
-  for (let r=0; r<rows; r++){
-    for (let c=0; c<cols; c++){
-      if (puzzle.layout[r][c] === "#") { out += "#"; continue; }
 
-      const td = document.querySelector(`td[data-r="${r}"][data-c="${c}"]`);
-      const cell = td?.querySelector(".cell");
-      const v = (cell?.textContent || "").trim().toUpperCase();
-
-      out += /^[A-Z]$/.test(v) ? v : ".";  // <-- placeholder for blank
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      if (puzzle.layout[r][c] === "#") {
+        out += "#";
+        continue;
+      }
+      const cell = document.querySelector(`.cell[data-r="${r}"][data-c="${c}"]`);
+      const v = (cell?.textContent || "").toUpperCase();
+      out += /^[A-Z]$/.test(v) ? v : ".";
     }
   }
   return out;
