@@ -466,6 +466,7 @@ function moveCursorByDelta(dr, dc) {
 }
 
 function handleLetterInput(ch) {
+  if (paused) return;
   if (!puzzle) return;
 
   // write into current logical cell
@@ -834,10 +835,6 @@ function resumeGame(){
   document.body.classList.remove("paused");
 }
 
-function handleLetterInput(ch) {
-  if (paused) return;
-}
-
 function togglePause() {
   if (paused) {
     resumeGame();
@@ -885,6 +882,20 @@ async function beginFlow(){
     }
   }
 
+  // Try to resume saved progress for this email + week
+  const saved = loadProgress(email);
+  if (saved && saved.attemptId) {
+    attemptId = saved.attemptId;
+    pausedTotalMs = Number(saved.pausedTotalMs || 0);
+    setGridString(saved.grid || "");
+
+    hasStartedAttempt = true;
+    isStartingAttempt = false;
+
+    S("overlay").style.display = "none";
+    startTimer(); // starts from 0 visually; see note below
+    return;
+  }
   // Start attempt on server
   try {
     const st = await post("startAttempt", { weekId: CONFIG.weekId, name, studentNumber: student, email, lab });
@@ -892,6 +903,7 @@ async function beginFlow(){
     localStorage.setItem(`cw:${CONFIG.weekId}:attempt:${email}`, attemptId);
     hasStartedAttempt = true;
     isStartingAttempt = false;
+    currentEmail = email.toLowerCase().trim();
 
     // 🔁 Reset pause state for a fresh attempt
     paused = false;
@@ -935,6 +947,9 @@ async function submitFlow(){
       percentCorrect,
       pausedTotalMs
     });
+
+    localStorage.removeItem(storageKey(currentEmail));
+
     S("result").textContent = `You got ${fin.percentCorrect}% correct. Official time: ${formatElapsedMs(fin.elapsedMs)}. Check email/junk folder for your completed crossword.`;
     if (submitBtn) {
       submitBtn.textContent = "Submitted";
