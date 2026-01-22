@@ -698,6 +698,7 @@ function saveProgress(email){
   localStorage.setItem(key, JSON.stringify({
     attemptId,
     grid: readGridString(),
+    elapsedMs: msElapsed,
     pausedTotalMs,
     updatedAt: Date.now()
   }));
@@ -824,6 +825,8 @@ function pauseGame(){
   }
   stopTimer();                // stops display timer only
   document.body.classList.add("paused");
+  const clue = S("current-clue");
+  if (clue) clue.style.display = "none";
   saveProgress();             // optional
 }
 
@@ -835,6 +838,7 @@ function resumeGame(){
   const btn = S("pause");
   if (btn) btn.textContent = "Pause";
   startTimer(false);          // resumes display timer
+  updateCurrentClue(puzzle, curR, curC);
   document.body.classList.remove("paused");
 }
 
@@ -890,13 +894,15 @@ async function beginFlow(){
   if (saved && saved.attemptId) {
     attemptId = saved.attemptId;
     pausedTotalMs = Number(saved.pausedTotalMs || 0);
+    msElapsed = Number(saved.elapsedMs || 0);
     setGridString(saved.grid || "");
+    currentEmail = email.toLowerCase().trim();
 
     hasStartedAttempt = true;
     isStartingAttempt = false;
 
     S("overlay").style.display = "none";
-    startTimer(); // starts from 0 visually; see note below
+    startTimer(false);
     return;
   }
   // Start attempt on server
@@ -934,6 +940,10 @@ async function submitFlow(){
   if (paused) resumeGame(); // closes the pause and updates pausedTotalMs
   const resultEl = S("result");
   if (resultEl) resultEl.textContent = "Submitting...";
+  if (timerStartTime) {
+    msElapsed = Math.max(0, performance.now() - timerStartTime);
+  }
+  const localElapsedMs = msElapsed;
   stopTimer();
   const userGridString = readGridString();
   const percentCorrect = puzzle.solutionString
@@ -953,7 +963,7 @@ async function submitFlow(){
 
     localStorage.removeItem(storageKey(currentEmail));
 
-    S("result").textContent = `You got ${fin.percentCorrect}% correct. Official time: ${formatElapsedMs(fin.elapsedMs)}. Check email/junk folder for your completed crossword.`;
+    S("result").textContent = `You got ${fin.percentCorrect}% correct. Official time: ${formatElapsedMs(localElapsedMs)}. Check email/junk folder for your completed crossword.`;
     if (submitBtn) {
       submitBtn.textContent = "Submitted";
     }
