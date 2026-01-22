@@ -10,6 +10,10 @@ let lastFocused = null; // {r,c}
 let curR = 0, curC = 0; // current cursor (row, col)
 let isStartingAttempt = false; // gate duplicate "Begin" clicks
 let hasStartedAttempt = false; // prevent re-starting once begun
+let paused = false;
+let pauseStartMs = 0;
+let pausedTotalMs = 0;
+let currentEmail = "";
 
 // minimal config (index.html sets window.CONFIG)
 const CFG = window.CONFIG;
@@ -487,6 +491,7 @@ function handleLetterInput(ch) {
   // keep word highlight + clue in sync
   setActiveWord(puzzle, curR, curC);
   updateSubmitState();
+  saveProgress(currentEmail);
 }
 
 // Backspace behaviour: clear current cell, then move backwards
@@ -525,6 +530,7 @@ function handleBackspace() {
 
   setActiveWord(puzzle, curR, curC);
   updateSubmitState();
+  saveProgress(currentEmail);
 }
 
 function handlePhysicalKey(e) {
@@ -681,6 +687,47 @@ function readGridString(){
   return out;
 }
 
+function storageKey(email){
+  return `cw:${CONFIG.weekId}:${String(email||"").trim().toLowerCase()}`;
+}
+
+function saveProgress(email){
+  if (!attemptId) return;
+  const key = storageKey(email);
+  localStorage.setItem(key, JSON.stringify({
+    attemptId,
+    grid: readGridString(),
+    pausedTotalMs,
+    updatedAt: Date.now()
+  }));
+}
+
+function loadProgress(email){
+  const key = storageKey(email);
+  const raw = localStorage.getItem(key);
+  if (!raw) return null;
+  try { return JSON.parse(raw); } catch { return null; }
+}
+
+/** Writes a flattened grid string back into your DIV-based cells */
+function setGridString(gridString){
+  if (!puzzle) return;
+  const rows = puzzle.rows, cols = puzzle.cols;
+  const flat = String(gridString||"").toUpperCase();
+
+  for (let r=0; r<rows; r++){
+    for (let c=0; c<cols; c++){
+      const td = document.querySelector(`td[data-r="${r}"][data-c="${c}"]`);
+      if (!td || td.classList.contains("block")) continue;
+
+      const idx = r * cols + c;
+      const ch = flat[idx] || "";
+      const cell = td.querySelector(".cell");
+      if (cell) cell.textContent = /^[A-Z]$/.test(ch) ? ch : "";
+    }
+  }
+}
+
 function isGridFullyFilled(){
   if (!puzzle) return false;
   const { rows, cols, layout } = puzzle;
@@ -765,6 +812,40 @@ function stopTimer(){
   timerStartTime = null;
 }
 
+function pauseGame(){
+  if (paused) return;
+  paused = true;
+  pauseStartMs = Date.now();
+  const btn = S("pause");
+  if (btn) btn.textContent = "Resume";
+  stopTimer();                // stops display timer only
+  document.body.classList.add("paused");
+  saveProgress();             // optional
+}
+
+function resumeGame(){
+  if (!paused) return;
+  paused = false;
+  pausedTotalMs += (Date.now() - pauseStartMs);
+  pauseStartMs = 0;
+  const btn = S("pause");
+  if (btn) btn.textContent = "Pause";
+  startTimer();               // resumes display timer
+  document.body.classList.remove("paused");
+}
+
+function handleLetterInput(ch) {
+  if (paused) return;
+}
+
+function togglePause() {
+  if (paused) {
+    resumeGame();
+  } else {
+    pauseGame();
+  }
+}
+
 // ===== Flows =====
 async function beginFlow(){
   const beginBtn = S("btn-begin");
@@ -808,8 +889,15 @@ async function beginFlow(){
   try {
     const st = await post("startAttempt", { weekId: CONFIG.weekId, name, studentNumber: student, email, lab });
     attemptId = st.attemptId;
+    localStorage.setItem(`cw:${CONFIG.weekId}:attempt:${email}`, attemptId);
     hasStartedAttempt = true;
     isStartingAttempt = false;
+
+    // 🔁 Reset pause state for a fresh attempt
+    paused = false;
+    pauseStartMs = 0;
+    pausedTotalMs = 0;
+
   } catch (e) {
     resetBeginBtn();
     return logErr(e.message);
@@ -828,6 +916,7 @@ async function submitFlow(){
     submitBtn.disabled = true;
     submitBtn.textContent = "Submitting...";
   }
+  if (paused) resumeGame(); // closes the pause and updates pausedTotalMs
   const resultEl = S("result");
   if (resultEl) resultEl.textContent = "Submitting...";
   stopTimer();
@@ -843,7 +932,8 @@ async function submitFlow(){
       rows: puzzle.rows,
       cols: puzzle.cols,
       solutionString: puzzle.solutionString, // optional: if you prefer server fetch, drop this
-      percentCorrect
+      percentCorrect,
+      pausedTotalMs
     });
     S("result").textContent = `You got ${fin.percentCorrect}% correct. Official time: ${formatElapsedMs(fin.elapsedMs)}. Check email/junk folder for your completed crossword.`;
     if (submitBtn) {
@@ -927,6 +1017,10 @@ async function init(){
   if (nextWordBtn) nextWordBtn.onclick = jumpToNextWord;
   const clearWordBtn = S("clear-word");
   if (clearWordBtn) clearWordBtn.onclick = clearCurrentWord;
+  const pauseBtn = S("pause");
+  if (pauseBtn) {
+  pauseBtn.onclick = () => paused ? resumeGame() : pauseGame();
+  }
   S("submit").onclick = submitFlow;
   document.addEventListener("keydown", handlePhysicalKey);
 
