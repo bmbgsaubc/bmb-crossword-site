@@ -187,6 +187,11 @@ function firstLetters(layout){
 // lastFocused = { r, c }
 
 function updateCurrentClue(p, r, c) {
+  const el = document.getElementById('current-clue');
+  if (paused) {
+    if (el) el.style.display = 'none';
+    return;
+  }
   // Ensure we have a map of first-letter numbers like { "r,c" => 1, 2, 3... }
   if (!p._numMap) p._numMap = firstLetters(p.layout);
 
@@ -207,7 +212,6 @@ function updateCurrentClue(p, r, c) {
   const clueText = bucket[key1] ?? bucket[clueNum] ?? '';
   const dirLabel = isAcross ? 'A' : 'D';
 
-  const el = document.getElementById('current-clue');
   if (el) {
     const prefix = clueNum ? `${clueNum}${dirLabel}` : dirLabel;
     el.textContent = clueText ? `${prefix} — ${clueText}` : prefix;
