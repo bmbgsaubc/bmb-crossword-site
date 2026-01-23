@@ -949,6 +949,9 @@ async function submitFlow(){
     msElapsed = Math.max(0, performance.now() - timerStartTime);
   }
   const localElapsedMs = msElapsed;
+  const localPausedMs = pausedTotalMs;
+  const localActiveMs = Math.max(0, localElapsedMs - localPausedMs);
+  const localActiveDisplay = formatElapsedMs(localActiveMs);
   stopTimer();
   const userGridString = readGridString();
   const percentCorrect = puzzle.solutionString
@@ -963,7 +966,10 @@ async function submitFlow(){
       cols: puzzle.cols,
       solutionString: puzzle.solutionString, // optional: if you prefer server fetch, drop this
       percentCorrect,
-      pausedTotalMs
+      pausedTotalMs,
+      pausedMs: localPausedMs,
+      activeMs: localActiveMs,
+      activeDisplay: localActiveDisplay
     });
 
     localStorage.removeItem(storageKey(currentEmail));
