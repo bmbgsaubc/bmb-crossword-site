@@ -97,6 +97,13 @@ body.paused #grid { opacity: 0.2; pointer-events: none; filter: blur(2px); }
   background: #f7f7f9;
   touch-action: manipulation;  /* prevent Safari double-tap zoom */
 }
+.pause-remaining {
+  display: none;
+  margin: -4px 0 8px;
+  font-size: 12px;
+  color: #555;
+  text-align: center;
+}
 
 /* ===== Soft keyboard (no native iOS keyboard) ===== */
 .softkeys { margin: 4px 0 4px; }

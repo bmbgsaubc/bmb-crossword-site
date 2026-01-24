@@ -14,6 +14,8 @@ let paused = false;
 let pauseStartMs = 0;
 let pausedTotalMs = 0;
 let currentEmail = "";
+const MAX_PAUSES = 5;
+let pausesUsed = 0;
 
 // minimal config (index.html sets window.CONFIG)
 const CFG = window.CONFIG;
@@ -708,6 +710,7 @@ function saveProgress(email){
     grid: readGridString(),
     elapsedMs: msElapsed,
     pausedTotalMs,
+    pausesUsed,
     updatedAt: Date.now()
   }));
 }
@@ -823,9 +826,27 @@ function stopTimer(){
   timerStartTime = null;
 }
 
+function updatePauseRemaining(){
+  const el = S("pause-remaining");
+  if (!el) return;
+  if (!paused) {
+    el.style.display = "none";
+    return;
+  }
+  const remaining = Math.max(0, MAX_PAUSES - pausesUsed);
+  el.textContent = `Pauses remaining: ${remaining}`;
+  el.style.display = "block";
+}
+
 function pauseGame(){
   if (paused) return;
+  if (pausesUsed >= MAX_PAUSES) {
+    const resultEl = S("result");
+    if (resultEl) resultEl.textContent = "No pauses remaining.";
+    return;
+  }
   paused = true;
+  pausesUsed += 1;
   pauseStartMs = Date.now();
   const btn = S("pause");
   if (btn) btn.textContent = "Resume";
@@ -836,7 +857,8 @@ function pauseGame(){
   document.body.classList.add("paused");
   const clue = S("current-clue");
   if (clue) clue.style.display = "none";
-  saveProgress();             // optional
+  updatePauseRemaining();
+  saveProgress(currentEmail);             // optional
 }
 
 function resumeGame(){
@@ -849,6 +871,7 @@ function resumeGame(){
   startTimer(false);          // resumes display timer
   updateCurrentClue(puzzle, curR, curC);
   document.body.classList.remove("paused");
+  updatePauseRemaining();
 }
 
 function togglePause() {
@@ -904,6 +927,7 @@ async function beginFlow(){
     attemptId = saved.attemptId;
     pausedTotalMs = Number(saved.pausedTotalMs || 0);
     msElapsed = Number(saved.elapsedMs || 0);
+    pausesUsed = Number(saved.pausesUsed || 0);
     setGridString(saved.grid || "");
     currentEmail = email.toLowerCase().trim();
 
@@ -927,6 +951,7 @@ async function beginFlow(){
     paused = false;
     pauseStartMs = 0;
     pausedTotalMs = 0;
+    pausesUsed = 0;
 
   } catch (e) {
     resetBeginBtn();
