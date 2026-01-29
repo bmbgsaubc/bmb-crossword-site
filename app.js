@@ -798,12 +798,14 @@ async function post(action, payload){
 
 // ===== Timer =====
 function formatMs(ms){
-  const t = Math.floor(ms/100);
-  const d = t%10, s = Math.floor(t/10)%60, m = Math.floor(t/600);
-  return `${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}.${d}`;
+  const totalSeconds = Math.floor(ms / 1000);
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${String(minutes).padStart(2,"0")}:${String(seconds).padStart(2,"0")}`;
 }
+
 function formatElapsedMs(ms){
-  const totalSeconds = Math.round(ms / 1000);
+  const totalSeconds = Math.floor(ms / 1000);
   const minutes = Math.floor(totalSeconds / 60);
   const seconds = totalSeconds % 60;
   return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
@@ -977,10 +979,10 @@ async function submitFlow(){
   if (timerStartTime) {
     msElapsed = Math.max(0, performance.now() - timerStartTime);
   }
-  const localElapsedMs = msElapsed;
+  const localElapsedMs = msElapsed; // msElapsed already excludes paused time
   const localPausedMs = pausedTotalMs;
-  const localActiveMs = Math.max(0, localElapsedMs - localPausedMs);
-  const localActiveDisplay = formatElapsedMs(localActiveMs);
+  const localActiveMs = Math.max(0, localElapsedMs);
+  const localActiveDisplay = formatMs(localActiveMs);
   stopTimer();
   const userGridString = readGridString();
   const percentCorrect = puzzle.solutionString
@@ -1003,7 +1005,7 @@ async function submitFlow(){
 
     localStorage.removeItem(storageKey(currentEmail));
 
-    S("result").textContent = `You got ${fin.percentCorrect}% correct. Official time: ${formatElapsedMs(localElapsedMs)}. Check email/junk folder for your completed crossword.`;
+    S("result").textContent = `You got ${fin.percentCorrect}% correct. Official time: ${formatMs(localActiveMs)}. Check email/junk folder for your completed crossword.`;
     if (submitBtn) {
       submitBtn.textContent = "Submitted";
     }
