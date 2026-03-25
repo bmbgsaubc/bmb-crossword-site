@@ -1,0 +1,221 @@
+/** Minimal API: record start & finish to the Attempts sheet **/
+
+function sheet(name){ return SpreadsheetApp.getActive().getSheetByName(name); }
+
+function doPost(e) {
+  try {
+    var action  = (e && e.parameter && e.parameter.action) || "";
+    var payload = (e && e.parameter && e.parameter.payload) ? JSON.parse(e.parameter.payload) : {};
+
+    if (e && e.parameter) {
+      if (payload.percentCorrect == null && e.parameter.percentCorrect != null) {
+        payload.percentCorrect = e.parameter.percentCorrect;
+      }
+    }
+
+    if (action === "startAttempt") {
+      return json(startAttempt_(payload));
+    }
+    if (action === "finishAttempt") {
+      return json(finishAttempt_(payload));
+    }
+    return jsonErr("Unknown action: " + action);
+  } catch (err) {
+    return jsonErr(String(err && err.message || err));
+  }
+}
+
+function json(o){ return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON); }
+function jsonErr(m){ return json({ ok:false, error:m }); }
+
+const TZ = 'America/Vancouver';
+function nowVancouverISO(date) {
+  return Utilities.formatDate(date || new Date(), TZ, 'yyyy-MM-dd HH:mm:ss');
+}
+
+/** Start attempt: create row; no puzzle lookup needed **/
+function startAttempt_(p){
+  var weekId = String(p.weekId||"").trim();
+  var name = String(p.name||"").trim();
+  var studentNumber = String(p.studentNumber||"").trim();
+  var email = String(p.email||"").trim();
+  var lab = String(p.lab||"").trim();
+
+  if(!weekId || !name || !studentNumber || !email || !lab){
+    return { ok:false, error:"Missing fields" };
+  }
+
+  const sh = sheet('Attempts');
+    if (!sh) return { ok:false, error:"Missing 'Attempts' sheet" };
+
+  const attemptId = Utilities.getUuid();
+  const start = new Date();
+  sh.appendRow([
+    attemptId,
+    weekId,
+    name,
+    studentNumber,
+    email,
+    lab,
+    nowVancouverISO(start), // startIso in local time
+    '',
+    '',
+    '',
+    '',
+    '',                       // new column L for elapsedDisplay
+    start.getTime()
+  ]);
+  return { ok: true, attemptId };
+}
+
+function parsePercentCorrect(v) {
+  // Treat null/undefined/empty as "no value"
+  if (v === null || v === undefined) return '';
+
+  // Normalize some common junk values
+  if (v === '' || v === 'null' || v === 'NaN' || v === 'undefined') return '';
+
+  // Try to convert to number
+  var n = Number(v);
+  if (isNaN(n)) return '';  // still garbage → treat as missing
+
+  return n;
+}
+
+function renderGridHtml(user, sol, rows, cols) {
+  const cell = 'width:20px;height:20px;text-align:center;font-weight:bold;border:1px solid #ddd;';
+  let html = '<table cellspacing="0" cellpadding="0" style="border-collapse:collapse;">';
+  for (let r = 0; r < rows; r++) {
+    html += '<tr>';
+    for (let c = 0; c < cols; c++) {
+      const idx = r * cols + c;
+      if (sol[idx] === '#') {
+        html += `<td style="${cell}background:#111;"></td>`;
+        continue;
+      }
+      const letter = user[idx] || '';
+      const correct = letter && letter === sol[idx];
+      html += `<td style="${cell}color:${correct ? '#0a0' : '#d00'};">${letter || '&nbsp;'}</td>`;
+    }
+    html += '</tr>';
+  }
+  return html + '</table>';
+}
+
+// If you don't pass solutionString from the client, fetch it from your public JSON
+function fetchSolutionString(weekId) {
+  // Update this URL to your public raw puzzles path
+  const url = `https://raw.githubusercontent.com/bmbgsaubc/bmb-crossword-site/main/puzzles/${weekId}.json`;
+  const res = UrlFetchApp.fetch(url, { muteHttpExceptions: true });
+  if (res.getResponseCode() !== 200) throw new Error('Puzzle JSON not found for ' + weekId);
+  const json = JSON.parse(res.getContentText());
+  if (json.solutionString) return json.solutionString.toUpperCase();
+  const layout = json.layout || [];
+  return layout.join('').toUpperCase(); // flatten layout
+}
+
+function normalizePercentCorrect(v) {
+  if (v === null || v === undefined || v === '' || v === 'null' || v === 'NaN' || v === 'undefined') return '';
+  var n = Number(v);
+  if (isNaN(n)) return '';
+  if (n <= 1 && n >= 0) n = n * 100; // handle 0–1 fractions
+  n = Math.max(0, Math.min(100, n));  // clamp to 0–100
+  return n;
+}
+function formatMs_(ms) {
+  var totalSeconds = Math.floor(ms / 1000);
+  var minutes = Math.floor(totalSeconds / 60);
+  var seconds = totalSeconds % 60;
+  return ('0' + minutes).slice(-2) + ':' + ('0' + seconds).slice(-2);
+}
+function finishAttempt_(p) {
+  Logger.log("finishAttempt_ payload: " + JSON.stringify(p));
+
+  var attemptId = String(p.attemptId||"").trim();
+  var percentCorrect = normalizePercentCorrect(p.percentCorrect);
+  var userGridString = (p.userGridString || "").toString().toUpperCase();
+  var rows = Number(p.rows || 0);
+  var cols = Number(p.cols || 0);
+  var weekId = String(p.weekId || "").trim();
+  var solutionString = (p.solutionString || "").toString().toUpperCase();
+
+  if(!attemptId) return { ok:false, error:"Missing attemptId" };
+  if(!rows || !cols) return { ok:false, error:"Missing rows/cols" };
+
+  var sh = sheet("Attempts");
+  if (!sh) return { ok:false, error:"Missing 'Attempts' sheet" };
+
+  var data = sh.getDataRange().getValues();
+  var r = -1;
+  for (var i=1;i<data.length;i++){
+    if (data[i][0] === attemptId){ r = i; break; }
+  }
+  if (r < 0) return { ok:false, error:"Attempt not found" };
+  if (data[r][7]) return { ok:false, error:"Attempt already finished" };
+
+  const startIso = data[r][6]; // G
+  const startMs = startIso ? new Date(startIso).getTime() : 0;
+  if (!startMs) return { ok:false, error:"Missing start timestamp" };
+
+  if (!solutionString) solutionString = fetchSolutionString(weekId);
+
+  const finish = new Date();
+  const finishIso = Utilities.formatDate(finish, TZ, 'yyyy-MM-dd HH:mm:ss');
+  const elapsedMs = finish.getTime() - startMs;
+
+  var clientActiveMs = Number(p.activeMs);
+  if (isNaN(clientActiveMs) || clientActiveMs < 0) clientActiveMs = null;
+  var clientPausedMs = Number(p.pausedMs != null ? p.pausedMs : (p.pausedTotalMs || 0));
+  if (isNaN(clientPausedMs) || clientPausedMs < 0) clientPausedMs = null;
+
+  const activeMs = (clientActiveMs != null)
+    ? Math.min(elapsedMs, clientActiveMs)
+    : Math.max(0, elapsedMs - (clientPausedMs || 0));
+  const pausedMs = Math.max(0, elapsedMs - activeMs);
+
+  const elapsedDisplay = "'" + formatMs_(elapsedMs);
+  const activeDisplay = "'" + formatMs_(activeMs);
+
+  const isCorrect = percentCorrect !== '' && percentCorrect >= 100;
+
+  // H–M
+  sh.getRange(r + 1, 8, 1, 6).setValues([[
+    finishIso,          // H
+    elapsedMs,          // I
+    isCorrect,         // J
+    percentCorrect === '' ? '' : percentCorrect, // K
+    elapsedDisplay,     // L
+    userGridString      // M
+  ]]);
+
+  // N–P
+  sh.getRange(r + 1, 14, 1, 3).setValues([[
+    rows,       //N
+    cols,       //O
+    weekId      //P
+  ]]);
+
+  // Q–S
+  sh.getRange(r + 1, 17, 1, 3).setValues([[
+    pausedMs,        // Q
+    activeMs,        // R
+    activeDisplay    // S
+  ]]);
+
+  // Email the player (optional)
+  const email = data[r][4]; // E
+  if (email) {
+    const gridHtml = renderGridHtml(userGridString, solutionString, rows, cols);
+    const pctText = percentCorrect === '' ? 'No score reported' : `${percentCorrect}%`;
+    MailApp.sendEmail({
+      to: email,
+      subject: `Your ${weekId} crossword results`,
+      htmlBody: `<p>You scored ${pctText}.</p>
+                 <p>Official: ${formatMs_(activeMs)} • Active: ${(activeMs/1000).toFixed(1)}s</p>
+                 ${gridHtml}`
+    });
+  }
+
+  const percentOut = (percentCorrect === '' ? null : percentCorrect);
+  return { ok: true, elapsedMs, activeMs, pausedMs, percentCorrect: percentOut };
+}
