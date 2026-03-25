@@ -20,7 +20,7 @@
       "38A" : "Flip upside down",
       "40A" : "Romanian amber-like resin in jewellery",
       "41A" : "Pickle herb",
-      "42A" : "Not getting another plate of food",
+      "42A" : "Not getting another plate of food (2-7)",
       "8A" : "Put into practice"
     },
     "down" : {
@@ -37,18 +37,18 @@
       "25D" : "Route or way",
       "28D" : "Anxious",
       "29D" : "Meeting notes",
-      "2D" : "Relating to the nose",
-      "32D" : "Relating to atoms",
+      "2D" : "Relating to 7D",
+      "32D" : "Relating to 14D",
       "35D" : "____ Martin",
       "36D" : "Makes money",
-      "37D" : "Sentence error with no proper stop",
+      "37D" : "Sentence error with no proper stop (3-2)",
       "39D" : "Amino acid codons GTT, GTC, GTA, GTG",
       "3D" : "Amino acid codons GCT, GCC, GCA, GCG",
       "4D" : "Be terrible (slang)",
       "5D" : "Crypto ticker for Ethereum, briefly",
-      "6D" : "Do again",
+      "6D" : "Go again",
       "7D" : "Sniffer",
-      "8D" : "Coming after this",
+      "8D" : "Coming after this (2-4)",
       "9D" : "Day on Mars, briefly"
     }
   },
