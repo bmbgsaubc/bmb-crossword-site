@@ -5,9 +5,9 @@
       "12A" : "Chance of harm",
       "13A" : "Cook in oil",
       "15A" : "Bummed out",
-      "17A" : "Lab demo recordings or TikToks, e.g.",
+      "17A" : "TikToks, e.g.",
       "1A" : "Greek letter used in math/physics",
-      "20A" : "Confidence in someone (or in your data…)",
+      "20A" : "Confidence in someone",
       "21A" : "Charged particle",
       "22A" : "Canadian coffee-and-donut chain",
       "26A" : "Silent ‘yes’",
@@ -16,17 +16,17 @@
       "29A" : "Day after Monday, briefly",
       "30A" : "Texting lead-in: ‘That feeling when…’",
       "31A" : "Brain",
-      "32A" : "Container for a plant",
+      "32A" : "Plant container",
       "33A" : "Finished dinner",
       "34A" : "RNA-destroying enzymes, plural",
       "38A" : "Morning/afternoon/evening, collectively (abbr.)",
-      "39A" : "Action word in grammar",
+      "39A" : "Action word",
       "3A" : "Slippery sea creature",
       "40A" : "Calgary Stampede event, for one",
       "41A" : "Lively and energetic",
       "42A" : "Keeps pestering",
       "5A" : "Event for showing off classic rides",
-      "9A" : "Prefix meaning ‘green’ or environmental"
+      "9A" : "Environmental prefix"
     },
     "down" : {
       "10D" : "Strong interests",
@@ -48,7 +48,7 @@
       "5D" : "Vary together (stats verb)",
       "6D" : "Not give in",
       "7D" : "Cautious",
-      "8D" : "GSA"
+      "8D" : "Group putting on this crossword"
     }
   },
   "cols" : 15,
