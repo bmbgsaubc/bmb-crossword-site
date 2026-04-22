@@ -219,3 +219,321 @@ function finishAttempt_(p) {
   const percentOut = (percentCorrect === '' ? null : percentCorrect);
   return { ok: true, elapsedMs, activeMs, pausedMs, percentCorrect: percentOut };
 }
+
+/** Weekly ranked submissions email **/
+
+const WEEKLY_RESULTS_EMAIL_TO = 'bmbgs.ubc@gmail.com';
+const ATTEMPTS_COLS = {
+  ATTEMPT_ID: 0,
+  WEEK_ID: 1,
+  NAME: 2,
+  STUDENT_NUMBER: 3,
+  EMAIL: 4,
+  LAB: 5,
+  START_ISO: 6,
+  FINISH_ISO: 7,
+  ELAPSED_MS: 8,
+  IS_CORRECT: 9,
+  PERCENT_CORRECT: 10,
+  ELAPSED_DISPLAY: 11,
+  USER_GRID_STRING: 12,
+  ROWS: 13,
+  COLS: 14,
+  WEEK_ID_DUP: 15,
+  PAUSED_MS: 16,
+  ACTIVE_MS: 17,
+  ACTIVE_DISPLAY: 18
+};
+
+function onOpen() {
+  var ui = SpreadsheetApp.getUi();
+  ui.createMenu('Crossword')
+    .addItem('Preview weekly ranking email', 'previewLatestWeeklyRankingEmail')
+    .addItem('Send weekly ranking email now', 'sendLatestWeeklyRankingEmail')
+    .addSeparator()
+    .addItem('Install Wednesday email trigger', 'installWeeklyRankingEmailTrigger')
+    .addToUi();
+}
+
+function previewLatestWeeklyRankingEmail() {
+  var result = buildLatestWeeklyRankingEmail_();
+  Logger.log(result.textBody);
+  SpreadsheetApp.getUi().alert(result.preview);
+  return result;
+}
+
+function sendLatestWeeklyRankingEmail() {
+  var result = buildLatestWeeklyRankingEmail_();
+  MailApp.sendEmail({
+    to: WEEKLY_RESULTS_EMAIL_TO,
+    subject: result.subject,
+    body: result.textBody,
+    htmlBody: result.htmlBody,
+    name: 'BMB Crossword'
+  });
+
+  Logger.log('Sent ranked submissions email for ' + result.weekId + ' to ' + WEEKLY_RESULTS_EMAIL_TO);
+  return result;
+}
+
+function installWeeklyRankingEmailTrigger() {
+  var triggers = ScriptApp.getProjectTriggers();
+  for (var i = 0; i < triggers.length; i++) {
+    if (triggers[i].getHandlerFunction() === 'sendLatestWeeklyRankingEmail') {
+      ScriptApp.deleteTrigger(triggers[i]);
+    }
+  }
+
+  ScriptApp.newTrigger('sendLatestWeeklyRankingEmail')
+    .timeBased()
+    .onWeekDay(ScriptApp.WeekDay.WEDNESDAY)
+    .atHour(21)
+    .create();
+
+  SpreadsheetApp.getUi().alert(
+    'Installed the Wednesday 9 PM trigger. Apps Script may run it at a randomized time within the 9 PM hour.'
+  );
+}
+
+function buildLatestWeeklyRankingEmail_() {
+  var weekId = detectLatestCompletedWeekId_();
+  var entries = buildRankedWeeklySubmissions_(weekId);
+  if (!entries.length) {
+    throw new Error('No completed submissions found for ' + weekId + '.');
+  }
+
+  return {
+    weekId: weekId,
+    subject: 'BMB Weekly Crossword ranked submissions - ' + weekId,
+    textBody: buildWeeklyRankingText_(weekId, entries),
+    htmlBody: buildWeeklyRankingHtml_(weekId, entries),
+    preview: buildWeeklyRankingPreview_(weekId, entries)
+  };
+}
+
+function detectLatestCompletedWeekId_() {
+  var rows = getAttemptRows_();
+  for (var i = rows.length - 1; i >= 0; i--) {
+    var attempt = parseAttemptRow_(rows[i]);
+    if (attempt && attempt.weekId) return attempt.weekId;
+  }
+  throw new Error("Could not determine the latest completed week from the 'Attempts' sheet.");
+}
+
+function buildRankedWeeklySubmissions_(weekId) {
+  var rows = getAttemptRows_();
+  var entries = [];
+
+  for (var i = 0; i < rows.length; i++) {
+    var attempt = parseAttemptRow_(rows[i]);
+    if (!attempt) continue;
+    if (attempt.weekId !== weekId) continue;
+    entries.push(attempt);
+  }
+
+  entries.sort(compareRankedAttempts_);
+  return entries;
+}
+
+function getAttemptRows_() {
+  var sh = sheet('Attempts');
+  if (!sh) throw new Error("Missing 'Attempts' sheet");
+
+  var values = sh.getDataRange().getValues();
+  if (!values.length) return [];
+
+  var startIndex = looksLikeHeaderRow_(values[0]) ? 1 : 0;
+  var rows = [];
+  for (var i = startIndex; i < values.length; i++) {
+    rows.push({
+      rowNumber: i + 1,
+      values: values[i]
+    });
+  }
+  return rows;
+}
+
+function looksLikeHeaderRow_(row) {
+  var colA = String(row[ATTEMPTS_COLS.ATTEMPT_ID] || '').toLowerCase();
+  var colB = String(row[ATTEMPTS_COLS.WEEK_ID] || '').toLowerCase();
+  var colK = String(row[ATTEMPTS_COLS.PERCENT_CORRECT] || '').toLowerCase();
+  return colA.indexOf('attempt') !== -1 || colB.indexOf('week') !== -1 || colK.indexOf('percent') !== -1;
+}
+
+function parseAttemptRow_(record) {
+  var row = record.values;
+  var weekId = String(row[ATTEMPTS_COLS.WEEK_ID] || row[ATTEMPTS_COLS.WEEK_ID_DUP] || '').trim();
+  var finishIso = String(row[ATTEMPTS_COLS.FINISH_ISO] || '').trim();
+  var percentCorrect = normalizePercentCorrect(row[ATTEMPTS_COLS.PERCENT_CORRECT]);
+  if (!weekId || !finishIso || percentCorrect === '') return null;
+
+  var activeMs = toNumberOrNull_(row[ATTEMPTS_COLS.ACTIVE_MS]);
+  if (activeMs === null) {
+    activeMs = parseDurationDisplayMs_(row[ATTEMPTS_COLS.ACTIVE_DISPLAY]);
+  }
+  if (activeMs === null) {
+    activeMs = toNumberOrNull_(row[ATTEMPTS_COLS.ELAPSED_MS]);
+  }
+  if (activeMs === null) {
+    activeMs = parseDurationDisplayMs_(row[ATTEMPTS_COLS.ELAPSED_DISPLAY]);
+  }
+  if (activeMs === null) return null;
+
+  return {
+    rowNumber: record.rowNumber,
+    attemptId: String(row[ATTEMPTS_COLS.ATTEMPT_ID] || '').trim(),
+    weekId: weekId,
+    name: String(row[ATTEMPTS_COLS.NAME] || '').trim(),
+    studentNumber: String(row[ATTEMPTS_COLS.STUDENT_NUMBER] || '').trim(),
+    email: String(row[ATTEMPTS_COLS.EMAIL] || '').trim(),
+    lab: String(row[ATTEMPTS_COLS.LAB] || '').trim(),
+    finishIso: finishIso,
+    percentCorrect: percentCorrect,
+    activeMs: activeMs,
+    activeDisplay: cleanDisplayTime_(row[ATTEMPTS_COLS.ACTIVE_DISPLAY]) || formatMs_(activeMs)
+  };
+}
+
+function compareRankedAttempts_(a, b) {
+  if (a.percentCorrect !== b.percentCorrect) return b.percentCorrect - a.percentCorrect;
+  if (a.activeMs !== b.activeMs) return a.activeMs - b.activeMs;
+
+  var aFinish = parseDateMs_(a.finishIso);
+  var bFinish = parseDateMs_(b.finishIso);
+  if (aFinish !== bFinish) return aFinish - bFinish;
+
+  return a.rowNumber - b.rowNumber;
+}
+
+function buildWeeklyRankingPreview_(weekId, entries) {
+  var lines = ['Latest ranked submissions for ' + weekId];
+  for (var i = 0; i < entries.length; i++) {
+    var entry = entries[i];
+    lines.push(
+      (i + 1) + '. ' + (entry.name || 'Unknown') +
+      ' - ' + entry.percentCorrect + '% - ' + entry.activeDisplay
+    );
+  }
+  return lines.join('\n');
+}
+
+function buildWeeklyRankingText_(weekId, entries) {
+  var lines = [
+    'BMB Weekly Crossword',
+    'All ranked submissions for ' + weekId,
+    '',
+    'Ranked by percent correct first, then active time.',
+    ''
+  ];
+
+  for (var i = 0; i < entries.length; i++) {
+    var entry = entries[i];
+    lines.push(
+      (i + 1) + '. ' + (entry.name || 'Unknown') +
+      ' | ' + (entry.email || '-') +
+      ' | ' + (entry.lab || '-') +
+      ' | ' + entry.percentCorrect + '%' +
+      ' | ' + entry.activeDisplay +
+      ' | ' + entry.finishIso
+    );
+  }
+
+  lines.push('');
+  lines.push('Generated automatically on ' + nowVancouverISO(new Date()) + '.');
+  return lines.join('\n');
+}
+
+function buildWeeklyRankingHtml_(weekId, entries) {
+  var rows = [];
+  for (var i = 0; i < entries.length; i++) {
+    var entry = entries[i];
+    rows.push(
+      '<tr>' +
+        '<td style="padding:8px 10px;border-bottom:1px solid #e5e7eb;">' + (i + 1) + '</td>' +
+        '<td style="padding:8px 10px;border-bottom:1px solid #e5e7eb;">' + escapeHtml_(entry.name || 'Unknown') + '</td>' +
+        '<td style="padding:8px 10px;border-bottom:1px solid #e5e7eb;">' + escapeHtml_(entry.email || '-') + '</td>' +
+        '<td style="padding:8px 10px;border-bottom:1px solid #e5e7eb;">' + escapeHtml_(entry.lab || '-') + '</td>' +
+        '<td style="padding:8px 10px;border-bottom:1px solid #e5e7eb;">' + entry.percentCorrect + '%</td>' +
+        '<td style="padding:8px 10px;border-bottom:1px solid #e5e7eb;">' + escapeHtml_(entry.activeDisplay) + '</td>' +
+        '<td style="padding:8px 10px;border-bottom:1px solid #e5e7eb;">' + escapeHtml_(entry.finishIso) + '</td>' +
+      '</tr>'
+    );
+  }
+
+  return (
+    '<div style="font-family:Arial,Helvetica,sans-serif;color:#111827;">' +
+      '<h2>All ranked submissions for ' + escapeHtml_(weekId) + '</h2>' +
+      '<p>Ranked by percent correct first, then active time.</p>' +
+      '<table cellspacing="0" cellpadding="0" style="border-collapse:collapse;width:100%;">' +
+        '<thead>' +
+          '<tr>' +
+            '<th align="left" style="padding:8px 10px;border-bottom:2px solid #cbd5e1;">#</th>' +
+            '<th align="left" style="padding:8px 10px;border-bottom:2px solid #cbd5e1;">Name</th>' +
+            '<th align="left" style="padding:8px 10px;border-bottom:2px solid #cbd5e1;">Email</th>' +
+            '<th align="left" style="padding:8px 10px;border-bottom:2px solid #cbd5e1;">Lab</th>' +
+            '<th align="left" style="padding:8px 10px;border-bottom:2px solid #cbd5e1;">Score</th>' +
+            '<th align="left" style="padding:8px 10px;border-bottom:2px solid #cbd5e1;">Active Time</th>' +
+            '<th align="left" style="padding:8px 10px;border-bottom:2px solid #cbd5e1;">Submitted</th>' +
+          '</tr>' +
+        '</thead>' +
+        '<tbody>' + rows.join('') + '</tbody>' +
+      '</table>' +
+      '<p style="margin-top:16px;color:#4b5563;">Generated automatically on ' + escapeHtml_(nowVancouverISO(new Date())) + '.</p>' +
+    '</div>'
+  );
+}
+
+function parseDurationDisplayMs_(value) {
+  var cleaned = cleanDisplayTime_(value);
+  if (!cleaned) return null;
+
+  var parts = cleaned.split(':');
+  if (parts.length !== 2 && parts.length !== 3) return null;
+
+  var nums = [];
+  for (var i = 0; i < parts.length; i++) {
+    var n = Number(parts[i]);
+    if (isNaN(n)) return null;
+    nums.push(n);
+  }
+
+  var hours = 0;
+  var minutes = 0;
+  var seconds = 0;
+  if (nums.length === 2) {
+    minutes = nums[0];
+    seconds = nums[1];
+  } else {
+    hours = nums[0];
+    minutes = nums[1];
+    seconds = nums[2];
+  }
+
+  return ((hours * 3600) + (minutes * 60) + seconds) * 1000;
+}
+
+function cleanDisplayTime_(value) {
+  var s = String(value || '').trim();
+  if (!s) return '';
+  return s.replace(/^'+/, '');
+}
+
+function toNumberOrNull_(value) {
+  if (value === null || value === undefined || value === '') return null;
+  var n = Number(value);
+  return isNaN(n) ? null : n;
+}
+
+function parseDateMs_(value) {
+  var ms = new Date(value).getTime();
+  return isNaN(ms) ? Number.MAX_SAFE_INTEGER : ms;
+}
+
+function escapeHtml_(value) {
+  return String(value || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
