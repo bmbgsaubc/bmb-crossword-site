@@ -222,7 +222,7 @@ function finishAttempt_(p) {
 
 /** Weekly ranked submissions email **/
 
-const WEEKLY_RESULTS_EMAIL_TO = 'bmbgs.ubc@gmail.com';
+const WEEKLY_RESULTS_EMAIL_TO = 'bmbgsa.ubc@gmail.com';
 const ATTEMPTS_COLS = {
   ATTEMPT_ID: 0,
   WEEK_ID: 1,
