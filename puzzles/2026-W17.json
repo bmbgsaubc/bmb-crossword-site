@@ -3,7 +3,7 @@
     "across" : {
       "10A" : "Fly high",
       "11A" : "Protein end",
-      "16A" : "Stat False positive, briefly",
+      "16A" : "Controls for false positives, briefly",
       "17A" : "Make a mistake",
       "19A" : "Charged atom",
       "20A" : "Do something",
