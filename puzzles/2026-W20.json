@@ -17,7 +17,7 @@
       "32A" : "Social rank",
       "33A" : "Droop",
       "35A" : "Sudden twitch",
-      "36A" : "Grpahical depiction",
+      "36A" : "Graphical depiction",
       "38A" : "Cards in wallets",
       "39A" : "Zebra, in sport",
       "41A" : "Deep Cove rental",
@@ -34,7 +34,7 @@
       "62A" : "Cheer for",
       "63A" : "Shoe fastener",
       "64A" : "Mass measure",
-      "65A" : "My cat and dog, e.g.",
+      "65A" : "My cat and dog, e.g. (2-4)",
       "6A" : "Beautiful"
     },
     "down" : {
@@ -45,7 +45,7 @@
       "17D" : "Tehran’s country",
       "19D" : "Greatest amount",
       "22D" : "Not safe, in baseball",
-      "23D" : "Standard lab protocol, briefly",
+      "23D" : "Standard lab protocol (abbr.)",
       "26D" : "Study block",
       "28D" : "Vancouver-facing ocean",
       "2D" : "Sum part",
