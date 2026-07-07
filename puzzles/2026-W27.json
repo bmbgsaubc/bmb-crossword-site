@@ -35,14 +35,14 @@
       "27A": "Not quite normal",
       "28A": "Aloe ___",
       "29A": "Short academic composition",
-      "31A": "Rocky hill",
+      "31A": "YYZ city, briefly",
       "32A": "Bike part",
       "33A": "Add-up result",
       "35A": "Sibling, informally",
-      "36A": "Lipid bilayer structures",
+      "36A": "Continously growing teeth",
       "37A": "Martini garnish",
       "39A": "Charged atom",
-      "41A": "Size-exclusion chromatography, briefly",
+      "41A": "Shape-based seperation tehcnique, briefly",
       "43A": "Joined group",
       "46A": "Exist",
       "48A": "Thin section",
@@ -66,7 +66,7 @@
       "5D": "Provide funding for",
       "7D": "Prize for achievement",
       "8D": "Place for pipettes",
-      "9D": "What a centrifuge displaces",
+      "9D": "Atmosphere",
       "10D": "Not accepting entries",
       "11D": "Graduate degree",
       "13D": "Country",
@@ -86,7 +86,7 @@
       "42D": "Seed on a burger bun",
       "44D": "Dark-film genre",
       "45D": "Give a charge to",
-      "46D": "Primate repeat sequence",
+      "46D": "Arithmetic circuit operator, briefly",
       "47D": "Mass-spec ionization method",
       "49D": "Set alight",
       "50D": "Corn centers",
@@ -98,5 +98,5 @@
       "63D": "Scam"
     }
   },
-  "solution": "#SHAKER#PALACE#M#ELON#N#WAIL#IAFRAID#A#ABROADSAM##OTTER##SUETCEP#WEIRD#VERAESSAY#TOR#PEDALR##SUM#N#SIS##S#DISKS###OLIVE#C##ION#G#SEC##SUNION#ARE#SLICESOON#CLASH#EGOSTIN##AUDIO##NBAORIGIN#E#RACISMM#ZERO#S#SPOT#E#MEMBER#KERNEL#"
+  "solution": "#SHAKER#PALACE#M#ELON#N#WAIL#IAFRAID#A#ABROADSAM##OTTER##SUETCEP#WEIRD#VERAESSAY#TOR#PEDALR##SUM#N#SIS##S#TUSKS###OLIVE#C##ION#G#SEC##SUNION#ARE#SLICESOON#CLASH#EGOSTIN##AUDIO##NBAORIGIN#E#RACISMM#ZERO#S#SPOT#E#MEMBER#KERNEL#"
 }
