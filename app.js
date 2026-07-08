@@ -581,6 +581,11 @@ function handlePhysicalKey(e) {
       e.preventDefault();
       moveCursorByDelta(1, 0);
       break;
+    case "Enter":
+    case "NumpadEnter":
+      e.preventDefault();
+      jumpToNextWord();
+      break;
     case " ":
       e.preventDefault();
       isAcross = !isAcross;
