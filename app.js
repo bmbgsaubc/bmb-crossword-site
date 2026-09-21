@@ -330,6 +330,7 @@ function buildKeys() {
     b.className = 'key';
     b.type = 'button';
     b.textContent = ch;
+    b.addEventListener('mousedown', e => e.preventDefault());
     b.addEventListener('click', () => handleLetterInput(ch));
     r1.appendChild(b);
   }
@@ -340,6 +341,7 @@ function buildKeys() {
     b.className = 'key';
     b.type = 'button';
     b.textContent = ch;
+    b.addEventListener('mousedown', e => e.preventDefault());
     b.addEventListener('click', () => handleLetterInput(ch));
     r2.appendChild(b);
   }
@@ -350,6 +352,7 @@ function buildKeys() {
     b.className = 'key';
     b.type = 'button';
     b.textContent = ch;
+    b.addEventListener('mousedown', e => e.preventDefault());
     b.addEventListener('click', () => handleLetterInput(ch));
     r3.appendChild(b);
   }
@@ -357,9 +360,11 @@ function buildKeys() {
   // ⌫ at the far right of row 3
   const back = document.createElement('button');
   back.id = 'key-back';
-  back.className = 'key';
+  back.className = 'key key-back';
+  back.setAttribute('aria-label', 'Backspace');
   back.type = 'button';
   back.textContent = '⌫';
+  back.addEventListener('mousedown', e => e.preventDefault());
   back.addEventListener('click', handleBackspace);
   r3.appendChild(back);
 
@@ -386,6 +391,15 @@ function getWordStart(p, r, c, across){
     while (rr - 1 >= 0 && p.layout[rr - 1][cc] !== "#") rr--;
   }
   return { r: rr, c: cc };
+}
+
+function updateDirectionButton(){
+  const btn = S("toggle");
+  if (!btn) return;
+
+  btn.textContent = isAcross
+    ? "Across →"
+    : "Down ↓";
 }
 
 function getWordStartsByDirection(p, across){
@@ -454,6 +468,7 @@ function movePrevCell(){
 }
 
 function moveCursorByDelta(dr, dc) {
+  if (paused) return;
   if (!puzzle) return;
   let r = curR;
   let c = curC;
@@ -503,6 +518,7 @@ function handleLetterInput(ch) {
 
 // Backspace behaviour: clear current cell, then move backwards
 function handleBackspace() {
+  if (paused) return;
   if (!puzzle) return;
 
   // 1) if current cell has a letter, just clear it and stay here
@@ -638,6 +654,7 @@ function moveCursor(delta){
 }
 
 function jumpToNextWord(){
+  if (paused) return;
   if (!puzzle) return;
   const start = getWordStart(puzzle, curR, curC, isAcross);
   const next = findNextWordStart(puzzle, start.r, start.c, isAcross);
@@ -1093,11 +1110,18 @@ async function init(){
   // wire buttons as you already do
   S("btn-begin").onclick = beginFlow;
   S("toggle").onclick = () => {
+    if (paused) return;
+
     isAcross = !isAcross;
+
+    updateDirectionButton();
+
     if (puzzle) {
-      setActiveWord(puzzle, curR, curC);   // re-highlight + update clue
+      setActiveWord(puzzle, curR, curC);
     }
-  };  
+  };
+
+  updateDirectionButton();
   const nextWordBtn = S("next-word");
   if (nextWordBtn) nextWordBtn.onclick = jumpToNextWord;
   const clearWordBtn = S("clear-word");
