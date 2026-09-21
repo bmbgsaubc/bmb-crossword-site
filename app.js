@@ -396,6 +396,24 @@ function setFocusCell(r, c){
   updateCurrentClue(puzzle, r, c);  // <-- add this
 }
 
+function addKeyPopEffect(button, letter) {
+  button.dataset.key = letter;
+
+  button.addEventListener("pointerdown", () => {
+    button.classList.add("key-pressed");
+  });
+
+  const release = () => {
+    setTimeout(() => {
+      button.classList.remove("key-pressed");
+    }, 60);
+  };
+
+  button.addEventListener("pointerup", release);
+  button.addEventListener("pointercancel", release);
+  button.addEventListener("pointerleave", release);
+}
+
 // ===== Soft keyboard =====
 function buildKeys() {
   const wrap = document.getElementById('softkeys');
@@ -431,7 +449,7 @@ function buildKeys() {
     b.className = 'key';
     b.type = 'button';
     b.textContent = ch;
-    b.addEventListener('mousedown', e => e.preventDefault());
+    addKeyPopEffect(b, ch);
     b.addEventListener('click', () => handleLetterInput(ch));
     r1.appendChild(b);
   }
@@ -442,7 +460,7 @@ function buildKeys() {
     b.className = 'key';
     b.type = 'button';
     b.textContent = ch;
-    b.addEventListener('mousedown', e => e.preventDefault());
+    addKeyPopEffect(b, ch);
     b.addEventListener('click', () => handleLetterInput(ch));
     r2.appendChild(b);
   }
@@ -453,7 +471,7 @@ function buildKeys() {
     b.className = 'key';
     b.type = 'button';
     b.textContent = ch;
-    b.addEventListener('mousedown', e => e.preventDefault());
+    addKeyPopEffect(b, ch);
     b.addEventListener('click', () => handleLetterInput(ch));
     r3.appendChild(b);
   }
