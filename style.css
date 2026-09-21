@@ -1,202 +1,906 @@
-/* ===== Base ===== */
-:root { --cell: 34px; } /* JS will override to fit the screen */
+/* =========================================================
+   BMB Weekly Crossword
+   Modern responsive UI
+   ========================================================= */
 
-html, body { margin: 0; padding: 0; -webkit-text-size-adjust: 100%; }
-body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
-main { max-width: 900px; margin: 0 auto; padding: 2px 12px 12px; }
+:root {
+  --cell: 34px;
 
-#title { display: none; } /* hide crossword title per your request */
+  --bg: #f4f7f5;
+  --surface: #ffffff;
+  --surface-soft: #f7faf8;
 
-/* ===== Overlay (name, student#, email, lab, Begin) ===== */
-.overlay { position: fixed; inset: 0; background: rgba(0,0,0,.6); display: flex; align-items: center; justify-content: center; z-index: 1000; }
-.overlay .card { background:#fff; padding:16px; border-radius:10px; width:min(420px, 88vw); display:flex; flex-direction:column; gap:8px; }
-.overlay input { padding:10px; font-size:14px; } /* >=16px prevents iOS zoom on focus */
-.overlay button {
-  padding: 14px 10px;
-  font-size: 18px;
-  font-weight: 600;
-  color: #009c27;
-  border-radius: 8px;
-  border: 1px solid #009c27;
-  background: #daffd8;
+  --text: #16221b;
+  --muted: #66736c;
+
+  --border: #d8e0dc;
+  --border-strong: #aebbb4;
+
+  --accent: #087a3e;
+  --accent-dark: #055c2e;
+  --accent-soft: #e5f5eb;
+
+  --word: #fff3b8;
+  --cursor: #ffd766;
+
+  --block: #202523;
+
+  --danger: #b42318;
+
+  --radius-sm: 8px;
+  --radius: 12px;
+  --radius-lg: 18px;
+
+  --shadow-sm:
+    0 1px 2px rgba(16, 24, 20, 0.06),
+    0 1px 5px rgba(16, 24, 20, 0.04);
+
+  --shadow:
+    0 12px 34px rgba(16, 24, 20, 0.10);
 }
-.overlay .overlay-note {
-  font-size: 10px;
-  line-height: 1.3;
-  margin: -2px 0 2px;
-  color: #555
-}
 
-#overlayMsg { color:#b00; font-size:0.6rem; min-height: 1.2em; }
 
-/* ===== Timer ===== */
-.timer { position: sticky; top: 0; background:#ffffff; color:#000000; padding:6px 6px; border-radius:6px; display:inline-block; font-variant-numeric: tabular-nums; }
+/* =========================================================
+   Base
+   ========================================================= */
 
-body.paused #grid { opacity: 0.2; pointer-events: none; filter: blur(2px); }
-
-/* ===== Layout blocks ===== */
-#puzzle { margin: 8px 0; }
-#grid-wrap { width: 100%; max-width: 100svw; margin: 0 auto; overflow: hidden; } /* height set by JS for square board */
-
-/* ===== Grid (table + td, cells are DIVs) ===== */
-.grid { width: 100%; table-layout: fixed; border-collapse: collapse; }
-.grid td {
-  width: var(--cell);
-  height: var(--cell);
-  padding: 0;
-  border: 1px solid #9aa0a6;
-  background: #fff;
+* {
   box-sizing: border-box;
-  position: relative;
-}
-.grid td.block { background:#222; border-color:#222; }
-
-/* numbering */
-.grid td .num { position:absolute; top:2px; left:3px; font-size:8px; color:#9e9e9e; user-select:none; pointer-events:none; }
-
-/* the letter box */
-.grid td .cell {
-  width: 100%; height: 100%;
-  display: flex; align-items: center; justify-content: center;
-  font-weight: 400;
-  font-size: max(14px, calc(var(--cell) * 0.36)); /* readable but conservative */
-  line-height: 1;
-  user-select: none;
 }
 
-/* whole word highlight + focused cell */
-.grid td.active { background:#fff6c2; }
-.grid td.active.block { background:#222; }
-.grid td.cursor { background:#ffe38f; box-shadow: inset 0 0 0 2px #1d4ed8; z-index:1; }
-
-/* ===== Hint box ABOVE the buttons ===== */
-.current-clue {
-  display: block;
-  background: #ebf2ff;
-  border: 1px solid #6898ff;
-  border-radius: 6px;
-  padding: 6px 8px;
-  font-size: 14px;
-  line-height: 1.35;
-  margin: 8px 0 6px;  /* sits above the controls */
-  white-space: nowrap;            /* keep a single-line bar */
-  overflow: hidden;               /* prevent the bar from growing taller */
-  text-overflow: ellipsis;        /* fallback if text cannot shrink enough */
-  min-height: calc(14px * 1.35);  /* consistent height even for short clues */
+html,
+body {
+  margin: 0;
+  padding: 0;
+  min-height: 100%;
+  -webkit-text-size-adjust: 100%;
 }
 
-/* ===== Controls/buttons BELOW the hint ===== */
-.controls { display:flex; gap:6px; margin: 6px 0 10px; }
-.controls button {
-  flex: 1;
-  padding: 9px 12px;          /* slightly taller */
-  font-size: 13px;
-  line-height: 1.1;
-  border-radius: 6px;
-  border: 1px solid #c7cbd1;
-  background: #f7f7f9;
-  touch-action: manipulation;  /* prevent Safari double-tap zoom */
-}
-.pause-remaining {
-  display: none;
-  margin: -4px 0 8px;
-  font-size: 12px;
-  color: #555;
-  text-align: center;
+body {
+  font-family:
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+
+  color: var(--text);
+  background: var(--bg);
+  -webkit-tap-highlight-color: transparent;
 }
 
-/* ===== Soft keyboard (no native iOS keyboard) ===== */
-.softkeys { margin: 4px 0 4px; }
-.softkeys .row {
-  display: flex;
-  gap: 5px;
-  justify-content: center;
-  margin-bottom: 4px;
+button,
+input {
+  font: inherit;
 }
 
-/* ❗ Key part: letter rows do NOT wrap */
-.softkeys .row.letters {
-  flex-wrap: nowrap;
-}
-
-/* Controls row can wrap if needed */
-.softkeys .row.controls {
-  flex-wrap: wrap;
-}
-
-.softkeys .key {
-  flex: 0 0 auto;
-  min-width: 24px;      /* shrink a bit so all 10 fit on small screens */
-  padding: 9px 12px;
-  font-size: 12px;
-  border-radius: 6px;
-  border: 1px solid #c7cbd1;
-  background: #f7f7f9;
-  touch-action: manipulation;  /* stop double-tap zoom while typing */
-}
-.softkeys .controls button {
-  padding: 10px 8px;
-  font-size: 14px;
-  border-radius: 6px;
-  border: 1px solid #c7cbd1;
-  background: #f7f7f9;
+button {
   touch-action: manipulation;
 }
 
+main {
+  width: 100%;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 0 18px 24px;
+}
+
+#title {
+  display: none;
+}
+
+
+/* =========================================================
+   Top status bar
+   ========================================================= */
+
 .status-bar {
+  min-height: 58px;
+
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 3px 12px 3px;
+
+  padding: 8px 2px;
+
+  position: sticky;
+  top: 0;
+  z-index: 30;
+
+  background: rgba(244, 247, 245, 0.88);
+
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.timer {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  min-width: 82px;
+
+  padding: 8px 12px;
+
+  border: 1px solid var(--border);
+  border-radius: 999px;
+
+  background: var(--surface);
+
+  color: var(--text);
+
+  font-size: 15px;
+  font-weight: 650;
+
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+
+  box-shadow: var(--shadow-sm);
 }
 
 .gsa-logo {
-  width: 50px;  /* adjust as needed */
+  width: 52px;
   height: auto;
+  display: block;
 }
 
+
+/* =========================================================
+   Start overlay
+   ========================================================= */
+
+.overlay {
+  position: fixed;
+  inset: 0;
+
+  z-index: 1000;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 20px;
+
+  background: rgba(14, 22, 18, 0.58);
+
+  backdrop-filter: blur(7px);
+  -webkit-backdrop-filter: blur(7px);
+}
+
+.overlay .card {
+  width: min(430px, 100%);
+
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+
+  padding: 24px;
+
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  border-radius: var(--radius-lg);
+
+  background: var(--surface);
+
+  box-shadow: var(--shadow);
+}
+
+.overlay h2 {
+  margin: 0 0 8px;
+
+  font-size: 22px;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+.overlay input {
+  width: 100%;
+
+  padding: 12px 13px;
+
+  /* 16px prevents iOS input zoom */
+  font-size: 16px;
+
+  color: var(--text);
+
+  border: 1px solid var(--border);
+  border-radius: 10px;
+
+  background: var(--surface-soft);
+
+  outline: none;
+
+  transition:
+    border-color 120ms ease,
+    box-shadow 120ms ease,
+    background 120ms ease;
+}
+
+.overlay input:focus {
+  border-color: var(--accent);
+
+  background: var(--surface);
+
+  box-shadow:
+    0 0 0 3px rgba(8, 122, 62, 0.12);
+}
+
+.overlay button {
+  width: 100%;
+
+  margin-top: 4px;
+
+  padding: 13px 14px;
+
+  border: 0;
+  border-radius: 11px;
+
+  background: var(--accent);
+
+  color: white;
+
+  font-size: 16px;
+  font-weight: 700;
+
+  cursor: pointer;
+
+  box-shadow:
+    0 2px 5px rgba(8, 122, 62, 0.20);
+
+  transition:
+    transform 80ms ease,
+    background 120ms ease;
+}
+
+.overlay button:hover {
+  background: var(--accent-dark);
+}
+
+.overlay button:active {
+  transform: translateY(1px);
+}
+
+.overlay button:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.overlay-note {
+  margin: 1px 2px 0;
+
+  color: var(--muted);
+
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+#overlayMsg {
+  min-height: 1.25em;
+
+  color: var(--danger);
+
+  font-size: 12px;
+}
+
+
+/* =========================================================
+   Main layout
+   ========================================================= */
+
+.play {
+  display: grid;
+
+  grid-template-columns:
+    minmax(0, 1fr)
+    300px;
+
+  gap: 28px;
+
+  align-items: start;
+}
+
+#puzzle {
+  min-width: 0;
+  margin: 4px 0 20px;
+}
+
+
+/* =========================================================
+   Crossword grid
+   ========================================================= */
+
+#grid-wrap {
+  width: 100%;
+  max-width: 100%;
+
+  margin: 0 auto;
+
+  overflow: hidden;
+
+  border-radius: 4px;
+
+  background: var(--block);
+
+  box-shadow:
+    0 0 0 2px var(--block),
+    0 6px 18px rgba(20, 28, 24, 0.08);
+}
+
+.grid {
+  width: 100%;
+
+  table-layout: fixed;
+  border-collapse: collapse;
+
+  background: var(--surface);
+}
+
+.grid td {
+  width: var(--cell);
+  height: var(--cell);
+
+  padding: 0;
+
+  position: relative;
+
+  box-sizing: border-box;
+
+  border: 1px solid #9ca69f;
+
+  background: var(--surface);
+
+  transition:
+    background 80ms ease,
+    box-shadow 80ms ease;
+}
+
+.grid td.block {
+  background: var(--block);
+  border-color: var(--block);
+}
+
+.grid td .num {
+  position: absolute;
+
+  top: 2px;
+  left: 3px;
+
+  z-index: 2;
+
+  color: #69736e;
+
+  font-size: max(7px, calc(var(--cell) * 0.20));
+  font-weight: 500;
+  line-height: 1;
+
+  pointer-events: none;
+  user-select: none;
+}
+
+.grid td .cell {
+  width: 100%;
+  height: 100%;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding-top: 2px;
+
+  color: #111815;
+
+  font-size: max(13px, calc(var(--cell) * 0.42));
+  font-weight: 500;
+  line-height: 1;
+
+  user-select: none;
+
+  cursor: pointer;
+}
+
+.grid td.active {
+  background: var(--word);
+}
+
+.grid td.active.block {
+  background: var(--block);
+}
+
+.grid td.cursor {
+  z-index: 3;
+
+  background: var(--cursor);
+
+  box-shadow:
+    inset 0 0 0 2px var(--accent-dark);
+}
+
+
+/* =========================================================
+   Current clue
+   ========================================================= */
+
+.current-clue {
+  width: 100%;
+
+  display: block;
+
+  margin: 12px 0 8px;
+
+  padding: 11px 13px;
+
+  border: 1px solid #d6dfda;
+  border-radius: var(--radius);
+
+  background: var(--surface);
+
+  color: var(--text);
+
+  font-size: 14px;
+  font-weight: 550;
+  line-height: 1.35;
+
+  box-shadow: var(--shadow-sm);
+
+  overflow: hidden;
+
+  white-space: normal;
+}
+
+
+/* =========================================================
+   Soft keyboard
+   ========================================================= */
+
+.softkeys {
+  width: 100%;
+
+  margin: 8px auto 10px;
+
+  padding: 8px 6px 5px;
+
+  border-radius: 14px;
+
+  background: #dfe5e2;
+
+  user-select: none;
+}
+
+.softkeys .row {
+  width: 100%;
+
+  display: flex;
+
+  justify-content: center;
+  align-items: stretch;
+
+  gap: 5px;
+
+  margin-bottom: 6px;
+}
+
+.softkeys .row:last-child {
+  margin-bottom: 0;
+}
+
+/* Slight natural QWERTY staggering */
+.softkeys .r2 {
+  padding-inline: 4%;
+}
+
+.softkeys .r3 {
+  padding-inline: 8%;
+}
+
+.softkeys .key {
+  min-width: 0;
+
+  flex: 1 1 0;
+
+  height: 44px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 0;
+
+  border: 0;
+  border-radius: 7px;
+
+  background: var(--surface);
+
+  color: #17201b;
+
+  font-size: 15px;
+  font-weight: 650;
+
+  cursor: pointer;
+
+  box-shadow:
+    0 1px 0 rgba(0, 0, 0, 0.12),
+    0 2px 4px rgba(20, 28, 24, 0.09);
+
+  transition:
+    transform 60ms ease,
+    background 80ms ease,
+    box-shadow 80ms ease;
+}
+
+.softkeys .key:active {
+  transform: translateY(1px);
+
+  background: #eef2f0;
+
+  box-shadow:
+    0 1px 2px rgba(20, 28, 24, 0.08);
+}
+
+.softkeys .key.key-back {
+  flex: 1.35 1 0;
+
+  background: #c7cfcb;
+
+  font-size: 18px;
+}
+
+
+/* =========================================================
+   Controls
+   ========================================================= */
+
+.controls {
+  width: 100%;
+
+  display: grid;
+
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+
+  gap: 7px;
+
+  margin: 8px 0 10px;
+}
+
+.controls button {
+  min-height: 43px;
+
+  padding: 7px 8px;
+
+  border: 1px solid var(--border);
+  border-radius: 10px;
+
+  background: var(--surface);
+
+  color: var(--text);
+
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.1;
+
+  cursor: pointer;
+
+  box-shadow: var(--shadow-sm);
+
+  transition:
+    transform 70ms ease,
+    border-color 100ms ease,
+    background 100ms ease;
+}
+
+.controls button:hover {
+  border-color: var(--border-strong);
+
+  background: var(--surface-soft);
+}
+
+.controls button:active {
+  transform: translateY(1px);
+}
+
+.controls #submit {
+  border-color: var(--accent);
+
+  background: var(--accent);
+
+  color: white;
+}
+
+.controls #submit:hover:not(:disabled) {
+  background: var(--accent-dark);
+}
+
+.controls #submit:disabled {
+  border-color: var(--border);
+
+  background: #e6ebe8;
+
+  color: #9ba49f;
+
+  box-shadow: none;
+
+  cursor: default;
+}
+
+.controls #pause {
+  background: #fffaf0;
+}
+
+.pause-remaining {
+  display: none;
+
+  margin: -2px 0 8px;
+
+  color: var(--muted);
+
+  font-size: 12px;
+
+  text-align: center;
+}
+
+
+/* =========================================================
+   Pause state
+   ========================================================= */
+
+body.paused #grid {
+  opacity: 0.20;
+
+  pointer-events: none;
+
+  filter: blur(3px);
+
+  transition:
+    opacity 150ms ease,
+    filter 150ms ease;
+}
+
+body.paused .softkeys {
+  opacity: 0.35;
+
+  pointer-events: none;
+}
+
+body.paused .controls button:not(#pause) {
+  opacity: 0.45;
+
+  pointer-events: none;
+}
+
+
+/* =========================================================
+   Result message
+   ========================================================= */
+
+#result {
+  min-height: 22px;
+
+  margin-top: 8px;
+
+  color: var(--text);
+
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+
+/* =========================================================
+   Desktop sidebar
+   ========================================================= */
+
+.cluewrap {
+  max-height: calc(100vh - 100px);
+
+  position: sticky;
+  top: 76px;
+
+  overflow: auto;
+}
+
+.desktop-tips {
+  padding: 16px;
+
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+
+  background: var(--surface);
+
+  color: var(--muted);
+
+  font-size: 13px;
+  line-height: 1.45;
+
+  box-shadow: var(--shadow-sm);
+}
+
+.desktop-tips h3 {
+  margin: 0 0 10px;
+
+  color: var(--text);
+
+  font-size: 14px;
+}
+
+.desktop-tips ul {
+  margin: 0;
+
+  padding-left: 20px;
+}
+
+.desktop-tips li {
+  margin: 6px 0;
+}
+
+.desktop-tips strong {
+  color: var(--text);
+
+  font-weight: 650;
+}
+
+
+/* =========================================================
+   Desktop
+   ========================================================= */
+
 @media (min-width: 801px) {
+
+  main {
+    padding-top: 0;
+  }
+
+  #puzzle {
+    max-width: 760px;
+  }
+
   .softkeys {
     display: none;
+  }
+
+  .current-clue {
+    font-size: 15px;
   }
 }
 
 
-/* ===== Desktop: clues on the right ===== */
-.play { display:grid; grid-template-columns: minmax(0,1fr) 320px; gap:20px; align-items:start; }
-.desktop-tips {
-  background: #f7f7f9;
-  border: 1px solid #c7cbd1;
-  border-radius: 8px;
-  padding: 10px 12px;
-  margin-bottom: 12px;
-  font-size: 13px;
-  line-height: 1.3;
-}
-.desktop-tips h3 { margin: 0 0 6px; font-size: 14px; }
-.desktop-tips ul { margin: 0; padding: 0 0 0 18px; }
-.desktop-tips li { margin-bottom: 4px; }
-.desktop-tips li:last-child { margin-bottom: 0; }
-.desktop-tips strong { font-weight: 600; }
-.cluewrap { max-height: 70vh; overflow:auto; }
-.cluewrap h3 { margin: 0 0 6px; font-size: 14px; }
-.cluewrap ol { margin: 0; padding-left: 24px; }
-.cluewrap li { margin: 2px 0; font-size: 14px; cursor: pointer; }
+/* =========================================================
+   Mobile
+   ========================================================= */
 
-/* ===== Mobile tweaks ===== */
 @media (max-width: 800px) {
-  body { padding: 4px; }
-  .play { display:block; }
-  .cluewrap { display:none; }            /* only show current clue on phones */
-  .desktop-tips { display:none; }
 
-  /* full-bleed width; JS sets --cell so squares stay perfect */
-  #grid-wrap { width: 100svw; max-width: 100svw; margin-left: 50%; transform: translateX(-50%); }
+  body {
+    background: var(--surface);
+  }
 
-  /* slightly smaller letters on tighter screens */
-  .grid td .cell { font-size: max(12px, calc(var(--cell) * 0.34)); }
+  main {
+    padding:
+      0
+      max(8px, env(safe-area-inset-right))
+      calc(12px + env(safe-area-inset-bottom))
+      max(8px, env(safe-area-inset-left));
+  }
 
-  /* buttons already small; keep spacing tight */
-  .controls { gap:6px; }
-  .controls button { padding:10px 10px; font-size:13px; }
+  .status-bar {
+    min-height: 48px;
+
+    padding:
+      4px
+      3px;
+
+    background: rgba(255, 255, 255, 0.93);
+  }
+
+  .gsa-logo {
+    width: 43px;
+  }
+
+  .timer {
+    min-width: 72px;
+
+    padding: 6px 10px;
+
+    font-size: 14px;
+  }
+
+  .play {
+    display: block;
+  }
+
+  .cluewrap {
+    display: none;
+  }
+
+  .desktop-tips {
+    display: none;
+  }
+
+  #puzzle {
+    margin-top: 2px;
+  }
+
+  /*
+   * Full phone width.
+   * JS determines --cell, preserving square cells.
+   */
+  #grid-wrap {
+    width: 100svw;
+    max-width: 100svw;
+
+    margin-left: 50%;
+
+    transform: translateX(-50%);
+
+    border-radius: 0;
+  }
+
+  .grid td .cell {
+    font-size:
+      max(12px, calc(var(--cell) * 0.39));
+  }
+
+  .current-clue {
+    margin: 9px 0 7px;
+
+    padding: 9px 11px;
+
+    border-radius: 9px;
+
+    font-size: 13px;
+
+    box-shadow: none;
+  }
+
+  .softkeys {
+    margin-top: 5px;
+  }
+
+  .softkeys .key {
+    height: 43px;
+
+    font-size: clamp(12px, 3.7vw, 15px);
+  }
+
+  .controls {
+    gap: 5px;
+
+    margin-top: 7px;
+  }
+
+  .controls button {
+    min-height: 41px;
+
+    padding: 6px 4px;
+
+    font-size: 12px;
+
+    border-radius: 9px;
+  }
+}
+
+
+/* =========================================================
+   Very small phones
+   ========================================================= */
+
+@media (max-width: 370px) {
+
+  .softkeys {
+    padding-inline: 3px;
+  }
+
+  .softkeys .row {
+    gap: 3px;
+  }
+
+  .softkeys .key {
+    height: 40px;
+
+    font-size: 12px;
+  }
+
+  .controls {
+    gap: 4px;
+  }
+
+  .controls button {
+    font-size: 11px;
+  }
 }
