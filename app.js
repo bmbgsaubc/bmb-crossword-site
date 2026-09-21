@@ -80,17 +80,118 @@ async function loadPuzzleJson(id){
 
 // ===== Layout + sizing =====
 function applyPhoneWidthSizing(rows, cols) {
-  const wrap = document.getElementById('grid-wrap') || S('grid');
+  const wrap = document.getElementById("grid-wrap") || S("grid");
   if (!wrap) return;
-  const vw = window.visualViewport ? window.visualViewport.width : window.innerWidth;
-  const isMobile = isMobileView();
-  const parentWidth = wrap.parentElement ? wrap.parentElement.clientWidth : wrap.clientWidth || vw;
-  const availableDesktopWidth = Math.min(parentWidth || vw, vw - 40);
-  const wrapW = Math.floor(isMobile ? vw : Math.max(240, availableDesktopWidth));
-  const cell = Math.max(18, Math.floor(wrapW / cols));
-  document.documentElement.style.setProperty('--cell', cell + 'px');
-  wrap.style.width  = wrapW + 'px';
-  wrap.style.height = wrapW + 'px'; // square board
+
+  const viewport = window.visualViewport;
+
+  const vw = Math.floor(
+    viewport ? viewport.width : window.innerWidth
+  );
+
+  const vh = Math.floor(
+    viewport ? viewport.height : window.innerHeight
+  );
+
+  /*
+   * Desktop can mostly size from available width.
+   */
+  if (!isMobileView()) {
+    const parentWidth = wrap.parentElement
+      ? wrap.parentElement.clientWidth
+      : vw;
+
+    const availableWidth = Math.min(
+      parentWidth || vw,
+      vw - 40
+    );
+
+    const cell = Math.max(
+      18,
+      Math.floor(availableWidth / cols)
+    );
+
+    document.documentElement.style.setProperty(
+      "--cell",
+      `${cell}px`
+    );
+
+    wrap.style.width = `${cell * cols}px`;
+    wrap.style.height = `${cell * rows}px`;
+
+    return;
+  }
+
+  /*
+   * MOBILE:
+   *
+   * Work out how much vertical space is being consumed by
+   * everything OTHER than the crossword.
+   */
+
+  const statusH =
+    document.querySelector(".status-bar")
+      ?.getBoundingClientRect().height || 40;
+
+  const clueH =
+    S("current-clue")
+      ?.getBoundingClientRect().height || 30;
+
+  const keyboardH =
+    S("softkeys")
+      ?.getBoundingClientRect().height || 120;
+
+  const controlsH =
+    document.querySelector(".controls")
+      ?.getBoundingClientRect().height || 36;
+
+  const pauseH =
+    S("pause-remaining")
+      ?.getBoundingClientRect().height || 0;
+
+  /*
+   * Small buffer for margins, borders, safe-area weirdness,
+   * and Safari's assorted tiny acts of mischief.
+   */
+  const buffer = 18;
+
+  const availableHeight =
+    vh
+    - statusH
+    - clueH
+    - keyboardH
+    - controlsH
+    - pauseH
+    - buffer;
+
+  /*
+   * Calculate a possible cell size from BOTH dimensions.
+   */
+
+  const cellFromWidth =
+    Math.floor((vw - 4) / cols);
+
+  const cellFromHeight =
+    Math.floor(availableHeight / rows);
+
+  /*
+   * Whichever dimension is tighter wins.
+   */
+  const cell = Math.max(
+    14,
+    Math.min(cellFromWidth, cellFromHeight)
+  );
+
+  const boardWidth = cell * cols;
+  const boardHeight = cell * rows;
+
+  document.documentElement.style.setProperty(
+    "--cell",
+    `${cell}px`
+  );
+
+  wrap.style.width = `${boardWidth}px`;
+  wrap.style.height = `${boardHeight}px`;
 }
 
 // ===== Build grid with DIV cells (no native keyboard) =====
@@ -367,6 +468,11 @@ function buildKeys() {
   back.addEventListener('mousedown', e => e.preventDefault());
   back.addEventListener('click', handleBackspace);
   r3.appendChild(back);
+  requestAnimationFrame(() => {
+  if (puzzle) {
+    applyPhoneWidthSizing(puzzle.rows, puzzle.cols);
+  }
+});
 
 }
 
@@ -959,6 +1065,13 @@ async function beginFlow(){
     isStartingAttempt = false;
 
     S("overlay").style.display = "none";
+
+    document.body.classList.add("game-active");
+
+    requestAnimationFrame(() => {
+      applyPhoneWidthSizing(puzzle.rows, puzzle.cols);
+    });
+
     startTimer(false);
     return;
   }
@@ -984,8 +1097,15 @@ async function beginFlow(){
 
   // Hide overlay + start timer
   S("overlay").style.display = "none";
+
+  document.body.classList.add("game-active");
+
+  requestAnimationFrame(() => {
+    applyPhoneWidthSizing(puzzle.rows, puzzle.cols);
+  });
+
   startTimer(true);
-}
+  }
 
 async function submitFlow(){
   if (!attemptId) return logErr("Click Begin first.");
