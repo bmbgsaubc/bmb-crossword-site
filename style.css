@@ -904,3 +904,200 @@ body.paused .controls button:not(#pause) {
     font-size: 11px;
   }
 }
+
+/* =========================================================
+   iPhone / mobile: fit entire game inside visible screen
+   ========================================================= */
+
+@media (max-width: 800px) {
+
+  html,
+  body {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+
+    overscroll-behavior: none;
+  }
+
+  /*
+   * Once the crossword has started, completely lock the page.
+   * No accidental vertical scrolling / rubber-banding.
+   */
+  body.game-active {
+    position: fixed;
+    inset: 0;
+
+    width: 100%;
+    height: 100dvh;
+
+    overflow: hidden;
+
+    overscroll-behavior: none;
+    touch-action: manipulation;
+  }
+
+  body.game-active main {
+    width: 100%;
+    height: 100dvh;
+
+    display: flex;
+    flex-direction: column;
+
+    overflow: hidden;
+
+    padding:
+      0
+      max(5px, env(safe-area-inset-right))
+      max(5px, env(safe-area-inset-bottom))
+      max(5px, env(safe-area-inset-left));
+  }
+
+  /*
+   * Top timer/logo area: keep it tiny.
+   */
+  .status-bar {
+    flex: 0 0 auto;
+
+    min-height: 40px;
+
+    padding: 2px 4px;
+  }
+
+  .timer {
+    padding: 4px 8px;
+
+    font-size: 13px;
+  }
+
+  .gsa-logo {
+    width: 40px;
+  }
+
+  /*
+   * Crossword area takes whatever vertical space remains.
+   */
+  .play {
+    flex: 1 1 auto;
+
+    min-height: 0;
+
+    display: block;
+
+    overflow: hidden;
+  }
+
+  #puzzle {
+    height: 100%;
+
+    display: flex;
+    flex-direction: column;
+
+    min-height: 0;
+
+    margin: 0;
+  }
+
+  /*
+   * IMPORTANT:
+   * JS now determines exact width AND height of board.
+   */
+  #grid-wrap {
+    flex: 0 0 auto;
+
+    max-width: 100%;
+
+    margin: 0 auto;
+
+    transform: none;
+  }
+
+  /*
+   * Keep clue to one line so a long clue doesn't suddenly
+   * consume another 20–40px of precious iPhone territory.
+   */
+  .current-clue {
+    flex: 0 0 auto;
+
+    margin: 5px 0;
+
+    padding: 5px 7px;
+
+    min-height: 29px;
+
+    font-size: 12px;
+
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /*
+   * Compact keyboard.
+   */
+  .softkeys {
+    flex: 0 0 auto;
+
+    margin: 2px 0;
+  }
+
+  .softkeys .row {
+    gap: 4px;
+
+    margin-bottom: 3px;
+  }
+
+  .softkeys .key {
+    min-width: 0;
+
+    height: 36px;
+
+    padding: 0 5px;
+
+    font-size: 12px;
+
+    flex: 1 1 0;
+  }
+
+  /*
+   * Compact controls.
+   */
+  .controls {
+    flex: 0 0 auto;
+
+    gap: 4px;
+
+    margin: 3px 0;
+  }
+
+  .controls button {
+    min-height: 34px;
+
+    padding: 4px 3px;
+
+    font-size: 11px;
+  }
+
+  .pause-remaining {
+    margin: 1px 0;
+
+    font-size: 10px;
+  }
+
+  #result {
+    margin: 1px 0;
+
+    font-size: 11px;
+
+    line-height: 1.2;
+  }
+}
+
+
+/*
+ * The start form is allowed to scroll if the native
+ * iPhone keyboard reduces the viewport.
+ */
+.overlay {
+  overflow-y: auto;
+}
