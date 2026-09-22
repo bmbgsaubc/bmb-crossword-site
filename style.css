@@ -473,7 +473,7 @@ main {
   justify-content: center;
   align-items: stretch;
 
-  gap: 5px;
+  gap: 7px;
 
   margin-bottom: 6px;
 }
@@ -494,7 +494,8 @@ main {
 .softkeys .key {
   min-width: 0;
 
-  flex: 1 1 0;
+  flex: 0 0 auto;
+  width: clamp(26px, 8vw, 34px);
 
   height: 48px;
 
@@ -560,7 +561,8 @@ main {
 
   transform: translateX(-50%);
 
-  width: 44px;
+  flex: 0 0 auto;
+  width: clamp(26px, 8vw, 34px);
   height: 56px;
 
   display: flex;
@@ -963,7 +965,7 @@ body.paused .controls button:not(#pause) {
   }
 
   .softkeys .row {
-    gap: 3px;
+    gap: 7px;
   }
 
   .softkeys .key {
@@ -1118,7 +1120,7 @@ body.paused .controls button:not(#pause) {
   }
 
   .softkeys .row {
-    gap: 4px;
+    gap: 7px;
 
     margin-bottom: 3px;
   }
