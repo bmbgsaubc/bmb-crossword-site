@@ -497,7 +497,7 @@ main {
   flex: 0 0 auto;
   width: clamp(26px, 8vw, 34px);
 
-  height: 48px;
+  height: 42px;
 
   display: flex;
   align-items: center;
@@ -931,7 +931,7 @@ body.paused .controls button:not(#pause) {
   }
 
   .softkeys .key {
-    height: 48px;
+    height: 40px;
 
     font-size: clamp(12px, 3.7vw, 15px);
   }
@@ -966,6 +966,8 @@ body.paused .controls button:not(#pause) {
 
   .softkeys .row {
     gap: 7px;
+    margin-bottom: 6px;
+
   }
 
   .softkeys .key {
@@ -1122,13 +1124,13 @@ body.paused .controls button:not(#pause) {
   .softkeys .row {
     gap: 7px;
 
-    margin-bottom: 3px;
+    margin-bottom: 6px;
   }
 
   .softkeys .key {
     min-width: 0;
 
-    height: 43px;
+    height: 42px;
 
     padding: 0 5px;
 
