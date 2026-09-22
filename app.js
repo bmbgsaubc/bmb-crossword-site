@@ -18,6 +18,7 @@ const MAX_PAUSES = 5;
 let pausesUsed = 0;
 let progressSaveTimer = null;
 let submitStateTimer = null;
+let highlightFrame = null;
 
 // minimal config (index.html sets window.CONFIG)
 const CFG = window.CONFIG;
@@ -323,12 +324,13 @@ function updateCurrentClue(p, r, c) {
     const newText = clueText
       ? `${prefix} — ${clueText}`
       : prefix;
+  
+    el.style.display = 'block';
 
   // Only redo layout if we actually changed clues
     if (el.textContent !== newText) {
       el.textContent = newText;
-      el.style.display = 'block';
-
+      
       requestAnimationFrame(() => {
         fitClueText(el);
       });
@@ -531,6 +533,20 @@ function scheduleSubmitState(){
   }, 120);
 }
 
+function scheduleActiveWordUpdate() {
+  if (highlightFrame !== null) {
+    cancelAnimationFrame(highlightFrame);
+  }
+
+  highlightFrame = requestAnimationFrame(() => {
+    if (puzzle) {
+      setActiveWord(puzzle, curR, curC);
+    }
+
+    highlightFrame = null;
+  });
+}
+
 function getLetterAt(r, c){
   const td = document.querySelector(`td[data-r="${r}"][data-c="${c}"]`);
   const cell = td?.querySelector('.cell');
@@ -665,7 +681,7 @@ function handleLetterInput(ch) {
   }
 
   // keep word highlight + clue in sync
-  setActiveWord(puzzle, curR, curC);
+  scheduleActiveWordUpdate();
   scheduleSubmitState();
   scheduleProgressSave();
   }
