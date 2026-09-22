@@ -16,6 +16,8 @@ let pausedTotalMs = 0;
 let currentEmail = "";
 const MAX_PAUSES = 5;
 let pausesUsed = 0;
+let progressSaveTimer = null;
+let submitStateTimer = null;
 
 // minimal config (index.html sets window.CONFIG)
 const CFG = window.CONFIG;
@@ -317,9 +319,20 @@ function updateCurrentClue(p, r, c) {
 
   if (el) {
     const prefix = clueNum ? `${clueNum}${dirLabel}` : dirLabel;
-    el.textContent = clueText ? `${prefix} — ${clueText}` : prefix;
-    el.style.display = 'block';
-    fitClueText(el);
+
+    const newText = clueText
+      ? `${prefix} — ${clueText}`
+      : prefix;
+
+  // Only redo layout if we actually changed clues
+    if (el.textContent !== newText) {
+      el.textContent = newText;
+      el.style.display = 'block';
+
+      requestAnimationFrame(() => {
+        fitClueText(el);
+      });
+    }
   }
 }
 
@@ -450,7 +463,10 @@ function buildKeys() {
     b.type = 'button';
     b.textContent = ch;
     addKeyPopEffect(b, ch);
-    b.addEventListener('click', () => handleLetterInput(ch));
+    b.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      handleLetterInput(ch);
+    });
     r1.appendChild(b);
   }
 
@@ -461,7 +477,10 @@ function buildKeys() {
     b.type = 'button';
     b.textContent = ch;
     addKeyPopEffect(b, ch);
-    b.addEventListener('click', () => handleLetterInput(ch));
+    b.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      handleLetterInput(ch);
+    });
     r2.appendChild(b);
   }
 
@@ -472,7 +491,10 @@ function buildKeys() {
     b.type = 'button';
     b.textContent = ch;
     addKeyPopEffect(b, ch);
-    b.addEventListener('click', () => handleLetterInput(ch));
+    b.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      handleLetterInput(ch);
+    });
     r3.appendChild(b);
   }
 
@@ -499,6 +521,14 @@ function putLetterAt(r, c, ch){
   if (!td || td.classList.contains('block')) return;
   const cell = td.querySelector('.cell');
   if (cell) cell.textContent = ch;
+}
+
+function scheduleSubmitState(){
+  clearTimeout(submitStateTimer);
+
+  submitStateTimer = setTimeout(() => {
+    updateSubmitState();
+  }, 120);
 }
 
 function getLetterAt(r, c){
@@ -636,9 +666,9 @@ function handleLetterInput(ch) {
 
   // keep word highlight + clue in sync
   setActiveWord(puzzle, curR, curC);
-  updateSubmitState();
-  saveProgress(currentEmail);
-}
+  scheduleSubmitState();
+  scheduleProgressSave();
+  }
 
 // Backspace behaviour: clear current cell, then move backwards
 function handleBackspace() {
@@ -676,8 +706,8 @@ function handleBackspace() {
   }
 
   setActiveWord(puzzle, curR, curC);
-  updateSubmitState();
-  saveProgress(currentEmail);
+  scheduleSubmitState();
+  scheduleProgressSave();
 }
 
 function handlePhysicalKey(e) {
@@ -859,6 +889,14 @@ function saveProgress(email){
     pausesUsed,
     updatedAt: Date.now()
   }));
+}
+
+function scheduleProgressSave(){
+  clearTimeout(progressSaveTimer);
+
+  progressSaveTimer = setTimeout(() => {
+    saveProgress(currentEmail);
+  }, 300);
 }
 
 function loadProgress(email){
@@ -1284,5 +1322,11 @@ async function init(){
     });
   }
   console.log("App initialized");
+
+  window.addEventListener("pagehide", () => {
+  if (attemptId && currentEmail) {
+    saveProgress(currentEmail);
+  }
+});
 }
 document.addEventListener("DOMContentLoaded", init);
