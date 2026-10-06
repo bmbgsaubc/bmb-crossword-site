@@ -5,6 +5,9 @@
 
 :root {
   --cell: 34px;
+  --cell-text: 14px;
+  --number-text: 7px;
+  --type-adjust: 0px;
 
   --bg: #f3f9fc;
   --surface: #ffffff;
@@ -113,6 +116,13 @@ main {
   -webkit-backdrop-filter: blur(12px);
 }
 
+.status-timing,
+.status-actions {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
 .timer {
   display: inline-flex;
   align-items: center;
@@ -129,7 +139,7 @@ main {
 
   color: var(--text);
 
-  font-size: 15px;
+  font-size: calc(15px + var(--type-adjust));
   font-weight: 650;
 
   font-variant-numeric: tabular-nums;
@@ -142,6 +152,104 @@ main {
   width: 52px;
   height: auto;
   display: block;
+}
+
+.text-settings {
+  position: relative;
+}
+
+.text-settings summary {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  list-style: none;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+}
+
+.text-settings summary::-webkit-details-marker {
+  display: none;
+}
+
+.text-settings summary:focus-visible,
+.text-size-options button:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.text-settings[open] summary {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.text-settings-panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 50;
+  width: min(270px, calc(100vw - 16px));
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.text-settings-panel > span {
+  display: block;
+  margin-bottom: 10px;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.text-size-options {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 5px;
+}
+
+.text-size-options button {
+  min-height: 36px;
+  padding: 5px 2px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-soft);
+  color: var(--text);
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.text-size-options button[aria-pressed="true"] {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+
+.pause-remaining {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  padding: 6px 9px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--muted);
+  font-size: calc(12px + var(--type-adjust));
+  font-weight: 600;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  box-shadow: var(--shadow-sm);
+}
+
+.pause-remaining[hidden] {
+  display: none;
 }
 
 
@@ -368,7 +476,7 @@ main {
 
   color: #69736e;
 
-  font-size: max(7px, calc(var(--cell) * 0.20));
+  font-size: var(--number-text);
   font-weight: 500;
   line-height: 1;
 
@@ -388,7 +496,7 @@ main {
 
   color: #111815;
 
-  font-size: max(13px, calc(var(--cell) * 0.42));
+  font-size: var(--cell-text);
   font-weight: 500;
   line-height: 1;
 
@@ -435,7 +543,7 @@ main {
 
   color: var(--text);
 
-  font-size: 14px;
+  font-size: calc(14px + var(--type-adjust));
   font-weight: 550;
   line-height: 1.35;
 
@@ -512,7 +620,7 @@ main {
 
   color: #17201b;
 
-  font-size: 15px;
+  font-size: calc(15px + var(--type-adjust));
   font-weight: 650;
 
   cursor: pointer;
@@ -650,7 +758,7 @@ main {
 
   color: var(--text);
 
-  font-size: 13px;
+  font-size: calc(13px + var(--type-adjust));
   font-weight: 600;
   line-height: 1.1;
 
@@ -702,19 +810,6 @@ main {
   background: #fffaf0;
 }
 
-.pause-remaining {
-  display: none;
-
-  margin: -2px 0 8px;
-
-  color: var(--muted);
-
-  font-size: 12px;
-
-  text-align: center;
-}
-
-
 /* =========================================================
    Pause state
    ========================================================= */
@@ -755,7 +850,7 @@ body.paused .controls button:not(#pause) {
 
   color: var(--text);
 
-  font-size: 13px;
+  font-size: calc(13px + var(--type-adjust));
   line-height: 1.4;
 }
 
@@ -794,7 +889,7 @@ body.paused .controls button:not(#pause) {
 
   color: var(--text);
 
-  font-size: 14px;
+  font-size: calc(14px + var(--type-adjust));
 }
 
 .desktop-tips ul {
@@ -833,7 +928,7 @@ body.paused .controls button:not(#pause) {
   }
 
   .current-clue {
-    font-size: 15px;
+    font-size: calc(15px + var(--type-adjust));
   }
 }
 
@@ -875,7 +970,7 @@ body.paused .controls button:not(#pause) {
 
     padding: 6px 10px;
 
-    font-size: 14px;
+    font-size: calc(14px + var(--type-adjust));
   }
 
   .play {
@@ -909,11 +1004,6 @@ body.paused .controls button:not(#pause) {
     border-radius: 0;
   }
 
-  .grid td .cell {
-    font-size:
-      max(12px, calc(var(--cell) * 0.39));
-  }
-
   .current-clue {
     margin: 9px 0 7px;
 
@@ -921,7 +1011,7 @@ body.paused .controls button:not(#pause) {
 
     border-radius: 9px;
 
-    font-size: 13px;
+    font-size: calc(13px + var(--type-adjust));
 
     box-shadow: none;
   }
@@ -933,7 +1023,7 @@ body.paused .controls button:not(#pause) {
   .softkeys .key {
     height: 40px;
 
-    font-size: clamp(12px, 3.7vw, 15px);
+    font-size: calc(13px + var(--type-adjust));
   }
 
   .controls {
@@ -947,7 +1037,7 @@ body.paused .controls button:not(#pause) {
 
     padding: 6px 4px;
 
-    font-size: 12px;
+    font-size: calc(12px + var(--type-adjust));
 
     border-radius: 9px;
   }
@@ -973,7 +1063,7 @@ body.paused .controls button:not(#pause) {
   .softkeys .key {
     height: 40px;
 
-    font-size: 12px;
+    font-size: calc(12px + var(--type-adjust));
   }
 
   .controls {
@@ -981,7 +1071,7 @@ body.paused .controls button:not(#pause) {
   }
 
   .controls button {
-    font-size: 11px;
+    font-size: calc(11px + var(--type-adjust));
   }
 }
 
@@ -1044,10 +1134,27 @@ body.paused .controls button:not(#pause) {
     padding: 2px 4px;
   }
 
+  .status-timing,
+  .status-actions {
+    gap: 4px;
+  }
+
+  .text-settings summary {
+    width: 32px;
+    height: 32px;
+    font-size: 14px;
+  }
+
   .timer {
     padding: 4px 8px;
 
-    font-size: 13px;
+    font-size: calc(13px + var(--type-adjust));
+  }
+
+  .pause-remaining {
+    min-height: 28px;
+    padding: 4px 6px;
+    font-size: calc(10px + var(--type-adjust));
   }
 
   .gsa-logo {
@@ -1105,11 +1212,16 @@ body.paused .controls button:not(#pause) {
 
     min-height: 29px;
 
-    font-size: 12px;
+    font-size: calc(12px + var(--type-adjust));
 
     white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+  }
+
+  .current-clue::-webkit-scrollbar {
+    display: none;
   }
 
   /*
@@ -1134,7 +1246,7 @@ body.paused .controls button:not(#pause) {
 
     padding: 0 5px;
 
-    font-size: 12px;
+    font-size: calc(12px + var(--type-adjust));
 
     flex: 1 1 0;
   }
@@ -1155,19 +1267,13 @@ body.paused .controls button:not(#pause) {
 
     padding: 4px 3px;
 
-    font-size: 11px;
-  }
-
-  .pause-remaining {
-    margin: 1px 0;
-
-    font-size: 10px;
+    font-size: calc(11px + var(--type-adjust));
   }
 
   #result {
     margin: 1px 0;
 
-    font-size: 11px;
+    font-size: calc(11px + var(--type-adjust));
 
     line-height: 1.2;
   }
