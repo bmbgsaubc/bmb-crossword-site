@@ -13,8 +13,25 @@
 <body>
   <main>
 <div class="status-bar">
-  <div id="timer" class="timer" style="display:none">00:00</div>
-  <img src="images/bmb-gsa-logo.png" alt="BMB-GSA logo" class="gsa-logo">
+  <div class="status-timing">
+    <div id="timer" class="timer" style="display:none">00:00</div>
+    <div id="pause-remaining" class="pause-remaining" aria-live="polite" hidden>Pauses 5/5</div>
+  </div>
+  <div class="status-actions">
+    <details id="text-settings" class="text-settings">
+      <summary aria-label="Text size settings" title="Text size settings">Aa</summary>
+      <div class="text-settings-panel" role="group" aria-labelledby="text-size-label">
+        <span id="text-size-label">Text size</span>
+        <div class="text-size-options">
+          <button type="button" data-text-size="small">Small</button>
+          <button type="button" data-text-size="normal" aria-pressed="true">Default</button>
+          <button type="button" data-text-size="large">Large</button>
+          <button type="button" data-text-size="extra">XL</button>
+        </div>
+      </div>
+    </details>
+    <img src="images/bmb-gsa-logo.png" alt="BMB-GSA logo" class="gsa-logo">
+  </div>
 </div>
 
 
