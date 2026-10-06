@@ -16,6 +16,14 @@ let pausedTotalMs = 0;
 let currentEmail = "";
 const MAX_PAUSES = 5;
 let pausesUsed = 0;
+const TEXT_SIZE_KEY = "cw:text-size";
+const TEXT_SIZES = {
+  small: { offset: -1, scale: 0.9 },
+  normal: { offset: 0, scale: 1 },
+  large: { offset: 2, scale: 1.18 },
+  extra: { offset: 4, scale: 1.34 }
+};
+let textSize = "normal";
 let progressSaveTimer = null;
 let submitStateTimer = null;
 let highlightFrame = null;
@@ -118,6 +126,7 @@ function applyPhoneWidthSizing(rows, cols) {
       "--cell",
       `${cell}px`
     );
+    updateCellTextSizing(cell);
 
     wrap.style.width = `${cell * cols}px`;
     wrap.style.height = `${cell * rows}px`;
@@ -148,10 +157,6 @@ function applyPhoneWidthSizing(rows, cols) {
     document.querySelector(".controls")
       ?.getBoundingClientRect().height || 36;
 
-  const pauseH =
-    S("pause-remaining")
-      ?.getBoundingClientRect().height || 0;
-
   /*
    * Small buffer for margins, borders, safe-area weirdness,
    * and Safari's assorted tiny acts of mischief.
@@ -164,7 +169,6 @@ function applyPhoneWidthSizing(rows, cols) {
     - clueH
     - keyboardH
     - controlsH
-    - pauseH
     - buffer;
 
   /*
@@ -192,9 +196,88 @@ function applyPhoneWidthSizing(rows, cols) {
     "--cell",
     `${cell}px`
   );
+  updateCellTextSizing(cell);
 
   wrap.style.width = `${boardWidth}px`;
   wrap.style.height = `${boardHeight}px`;
+}
+
+function updateCellTextSizing(cell) {
+  const scale = TEXT_SIZES[textSize].scale;
+  const letterBase = Math.max(isMobileView() ? 12 : 13, cell * (isMobileView() ? 0.39 : 0.42));
+  const numberBase = Math.max(7, cell * 0.20);
+  document.documentElement.style.setProperty("--cell-text", `${Math.min(cell * 0.75, letterBase * scale)}px`);
+  document.documentElement.style.setProperty("--number-text", `${Math.max(7, Math.min(cell * 0.45, numberBase * scale))}px`);
+}
+
+function applyTextSize(size, persist = true) {
+  textSize = Object.prototype.hasOwnProperty.call(TEXT_SIZES, size) ? size : "normal";
+  document.documentElement.style.setProperty("--type-adjust", `${TEXT_SIZES[textSize].offset}px`);
+  document.documentElement.dataset.textSize = textSize;
+  document.querySelectorAll("[data-text-size]").forEach(button => {
+    button.setAttribute("aria-pressed", String(button.dataset.textSize === textSize));
+  });
+  if (puzzle) applyPhoneWidthSizing(puzzle.rows, puzzle.cols);
+  fitClueText(S("current-clue"));
+  if (persist) {
+    try { localStorage.setItem(TEXT_SIZE_KEY, textSize); } catch (e) { /* Storage may be disabled. */ }
+  }
+}
+
+function initTextSettings() {
+  const bar = document.querySelector(".status-bar");
+  const logo = bar && bar.querySelector(".gsa-logo");
+  const timer = S("timer");
+  if (bar && logo && timer && !S("text-settings")) {
+    const timing = document.createElement("div");
+    timing.className = "status-timing";
+    bar.insertBefore(timing, timer);
+    timing.appendChild(timer);
+
+    let pauseCount = S("pause-remaining");
+    if (!pauseCount) {
+      pauseCount = document.createElement("div");
+      pauseCount.id = "pause-remaining";
+      pauseCount.className = "pause-remaining";
+      pauseCount.setAttribute("aria-live", "polite");
+    }
+    pauseCount.hidden = true;
+    timing.appendChild(pauseCount);
+
+    const actions = document.createElement("div");
+    actions.className = "status-actions";
+    bar.insertBefore(actions, logo);
+    const settings = document.createElement("details");
+    settings.id = "text-settings";
+    settings.className = "text-settings";
+    settings.innerHTML = `
+      <summary aria-label="Text size settings" title="Text size settings">Aa</summary>
+      <div class="text-settings-panel" role="group" aria-labelledby="text-size-label">
+        <span id="text-size-label">Text size</span>
+        <div class="text-size-options">
+          <button type="button" data-text-size="small">Small</button>
+          <button type="button" data-text-size="normal">Default</button>
+          <button type="button" data-text-size="large">Large</button>
+          <button type="button" data-text-size="extra">XL</button>
+        </div>
+      </div>`;
+    actions.append(settings, logo);
+  }
+
+  let saved = "normal";
+  try { saved = localStorage.getItem(TEXT_SIZE_KEY) || "normal"; } catch (e) { /* Use default. */ }
+  applyTextSize(saved, false);
+  const settings = S("text-settings");
+  if (!settings) return;
+  settings.querySelectorAll("[data-text-size]").forEach(button => {
+    button.addEventListener("click", () => {
+      applyTextSize(button.dataset.textSize);
+      settings.open = false;
+    });
+  });
+  document.addEventListener("pointerdown", event => {
+    if (settings.open && !settings.contains(event.target)) settings.open = false;
+  });
 }
 
 // ===== Build grid with DIV cells (no native keyboard) =====
@@ -330,6 +413,8 @@ function updateCurrentClue(p, r, c) {
   // Only redo layout if we actually changed clues
     if (el.textContent !== newText) {
       el.textContent = newText;
+      el.title = newText;
+      el.setAttribute("aria-label", newText);
       
       requestAnimationFrame(() => {
         fitClueText(el);
@@ -338,20 +423,10 @@ function updateCurrentClue(p, r, c) {
   }
 }
 
-// Keep the clue bar to one line by shrinking the font if needed
+// Keep CSS in control of the chosen text size; the mobile clue can scroll if long.
 function fitClueText(el) {
   if (!el) return;
-  if (!el.dataset.baseFontSize) {
-    el.dataset.baseFontSize = String(parseFloat(getComputedStyle(el).fontSize) || 14);
-  }
-  const baseSize = parseFloat(el.dataset.baseFontSize);
-  const minSize = 10;
-  let size = baseSize;
-  el.style.fontSize = `${size}px`;
-  while (el.scrollWidth > el.clientWidth && size > minSize) {
-    size -= 0.5; // step down until it fits
-    el.style.fontSize = `${size}px`;
-  }
+  el.style.removeProperty("font-size");
 }
 
 // ===== Active word highlight & current clue text =====
@@ -593,7 +668,10 @@ function findNextWordStart(p, startR, startC, across){
   const starts = getWordStartsByDirection(p, across);
   const idx = starts.findIndex(pos => pos.r === startR && pos.c === startC);
   if (idx >= 0 && idx + 1 < starts.length) return starts[idx + 1];
-  return null;
+  if (idx >= 0) return null;
+  // A one-cell run has no clue in this direction. Jump to the next valid
+  // clue by grid order, wrapping to the first if this is past the last one.
+  return starts.find(pos => pos.r > startR || (pos.r === startR && pos.c > startC)) || starts[0] || null;
 }
 
 function stepForwardInWord(p, r, c, across){
@@ -735,6 +813,12 @@ function handlePhysicalKey(e) {
   if (overlayVisible) return;
 
   const active = document.activeElement;
+  const settings = S("text-settings");
+  if (settings?.open) {
+    if (e.key === "Escape") settings.open = false;
+    return;
+  }
+  if (active?.closest?.(".text-settings")) return;
   if (active && (active.tagName === "INPUT" || active.tagName === "TEXTAREA" || active.isContentEditable)) {
     return;
   }
@@ -1017,6 +1101,7 @@ function startTimer(reset){
   timerStartTime = performance.now() - msElapsed;
   S("timer").style.display = "inline-block";
   S("timer").textContent = formatMs(msElapsed);
+  updatePauseRemaining();
   timerHandle = setInterval(()=> {
     // use wall clock so the display stays accurate even if intervals aren't
     msElapsed = Math.max(0, performance.now() - timerStartTime);
@@ -1031,13 +1116,10 @@ function stopTimer(){
 function updatePauseRemaining(){
   const el = S("pause-remaining");
   if (!el) return;
-  if (!paused) {
-    el.style.display = "none";
-    return;
-  }
+  el.hidden = !hasStartedAttempt;
   const remaining = Math.max(0, MAX_PAUSES - pausesUsed);
-  el.textContent = `Pauses remaining: ${remaining}`;
-  el.style.display = "block";
+  el.textContent = `Pauses ${remaining}/${MAX_PAUSES}`;
+  el.setAttribute("aria-label", `${remaining} of ${MAX_PAUSES} pauses remaining`);
 }
 
 function pauseGame(){
@@ -1253,6 +1335,7 @@ function computePercent(user, sol){
 
 // ===== Init =====
 async function init(){
+  initTextSettings();
   try {
     // 1) Read query param (?p=ID / ?puzzle=ID / ?puzzles=ID), else use manifest default
     const params = new URLSearchParams(location.search);
