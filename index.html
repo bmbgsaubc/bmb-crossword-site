@@ -69,7 +69,6 @@
         <button id="next-word">Next Clue</button>
         <button id="submit" disabled>Submit</button>
       </div>
-      <div id="pause-remaining" class="pause-remaining" aria-live="polite"></div>
       <div id="result"></div>
     </section>
 
@@ -89,6 +88,18 @@
   </section>
   </main>
 
+  <dialog id="submission-dialog" class="submission-dialog" aria-labelledby="submission-title" aria-describedby="submission-details">
+    <h2 id="submission-title">Successfully Submitted.</h2>
+    <div id="submission-details">
+      <p>Your score: <strong id="submission-score"></strong></p>
+      <p>Your time: <strong id="submission-time"></strong></p>
+      <p class="submission-note">Check email for further info.</p>
+    </div>
+    <form method="dialog">
+      <button type="submit" autofocus>Done</button>
+    </form>
+  </dialog>
+
   <script>
     // Accept ?p=2025-W44, ?puzzle=..., or ?puzzles=...
     const params = new URLSearchParams(location.search);
@@ -101,3 +112,4 @@
   <script src="app.js"></script>
 </body>
 </html>
+
