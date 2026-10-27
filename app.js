@@ -10,6 +10,9 @@ let lastFocused = null; // {r,c}
 let curR = 0, curC = 0; // current cursor (row, col)
 let isStartingAttempt = false; // gate duplicate "Begin" clicks
 let hasStartedAttempt = false; // prevent re-starting once begun
+let isSubmitting = false;
+let hasSubmitted = false;
+let submittedScore = null;
 let paused = false;
 let pauseStartMs = 0;
 let pausedTotalMs = 0;
@@ -505,6 +508,13 @@ function addKeyPopEffect(button, letter) {
 }
 
 // ===== Soft keyboard =====
+function addKeyFace(button, label) {
+  const face = document.createElement("span");
+  face.className = "key-face";
+  face.textContent = label;
+  button.appendChild(face);
+}
+
 function buildKeys() {
   const wrap = document.getElementById('softkeys');
   if (!wrap) return;
@@ -538,7 +548,7 @@ function buildKeys() {
     const b = document.createElement('button');
     b.className = 'key';
     b.type = 'button';
-    b.textContent = ch;
+    addKeyFace(b, ch);
     addKeyPopEffect(b, ch);
     b.addEventListener('pointerdown', (e) => {
       e.preventDefault();
@@ -552,7 +562,7 @@ function buildKeys() {
     const b = document.createElement('button');
     b.className = 'key';
     b.type = 'button';
-    b.textContent = ch;
+    addKeyFace(b, ch);
     addKeyPopEffect(b, ch);
     b.addEventListener('pointerdown', (e) => {
       e.preventDefault();
@@ -566,7 +576,7 @@ function buildKeys() {
     const b = document.createElement('button');
     b.className = 'key';
     b.type = 'button';
-    b.textContent = ch;
+    addKeyFace(b, ch);
     addKeyPopEffect(b, ch);
     b.addEventListener('pointerdown', (e) => {
       e.preventDefault();
@@ -581,7 +591,7 @@ function buildKeys() {
   back.className = 'key key-back';
   back.setAttribute('aria-label', 'Backspace');
   back.type = 'button';
-  back.textContent = '⌫';
+  addKeyFace(back, '⌫');
   back.addEventListener('mousedown', e => e.preventDefault());
   back.addEventListener('click', handleBackspace);
   r3.appendChild(back);
@@ -735,7 +745,7 @@ function moveCursorByDelta(dr, dc) {
 }
 
 function handleLetterInput(ch) {
-  if (paused) return;
+  if (paused || isSubmitting || hasSubmitted) return;
   if (!puzzle) return;
 
   // write into current logical cell
@@ -766,7 +776,7 @@ function handleLetterInput(ch) {
 
 // Backspace behaviour: clear current cell, then move backwards
 function handleBackspace() {
-  if (paused) return;
+  if (paused || isSubmitting || hasSubmitted) return;
   if (!puzzle) return;
 
   // 1) if current cell has a letter, just clear it and stay here
@@ -806,6 +816,7 @@ function handleBackspace() {
 
 function handlePhysicalKey(e) {
   if (!puzzle) return;
+  if (S("submission-dialog")?.open) return;
   const overlayVisible = (() => {
     const overlay = S("overlay");
     return overlay && overlay.style.display !== "none";
@@ -919,6 +930,7 @@ function jumpToNextWord(){
 }
 
 function clearCurrentWord() {
+  if (isSubmitting || hasSubmitted) return;
   if (!puzzle) return;
 
   const layout = puzzle.layout;
@@ -981,14 +993,16 @@ function storageKey(email){
 function saveProgress(email){
   if (!attemptId) return;
   const key = storageKey(email);
-  localStorage.setItem(key, JSON.stringify({
+  try { localStorage.setItem(key, JSON.stringify({
     attemptId,
     grid: readGridString(),
     elapsedMs: msElapsed,
     pausedTotalMs,
     pausesUsed,
+    submitted: hasSubmitted,
+    percentCorrect: submittedScore,
     updatedAt: Date.now()
-  }));
+  })); } catch (e) { console.warn("Could not save crossword progress", e); }
 }
 
 function scheduleProgressSave(){
@@ -1040,7 +1054,8 @@ function isGridFullyFilled(){
 function updateSubmitState(){
   const btn = S("submit");
   if (!btn) return;
-  btn.disabled = !isGridFullyFilled();
+  btn.disabled = hasSubmitted || isSubmitting || !isGridFullyFilled();
+  btn.textContent = hasSubmitted ? "Submitted" : isSubmitting ? "Submitting..." : "Submit";
 }
 
 // ===== Server calls (Google Apps Script) =====
@@ -1123,7 +1138,7 @@ function updatePauseRemaining(){
 }
 
 function pauseGame(){
-  if (paused) return;
+  if (paused || isSubmitting || hasSubmitted) return;
   if (pausesUsed >= MAX_PAUSES) {
     const resultEl = S("result");
     if (resultEl) resultEl.textContent = "No pauses remaining.";
@@ -1212,6 +1227,8 @@ async function beginFlow(){
     pausedTotalMs = Number(saved.pausedTotalMs || 0);
     msElapsed = Number(saved.elapsedMs || 0);
     pausesUsed = Number(saved.pausesUsed || 0);
+    hasSubmitted = saved.submitted === true;
+    submittedScore = saved.percentCorrect ?? null;
     setGridString(saved.grid || "");
     currentEmail = email.toLowerCase().trim();
 
@@ -1226,7 +1243,16 @@ async function beginFlow(){
       applyPhoneWidthSizing(puzzle.rows, puzzle.cols);
     });
 
-    startTimer(false);
+    if (hasSubmitted) {
+      S("timer").style.display = "inline-block";
+      S("timer").textContent = formatMs(msElapsed);
+      updatePauseRemaining();
+      S("pause").disabled = true;
+      updateSubmitState();
+      S("result").textContent = "Successfully submitted. Check email for further info.";
+    } else {
+      startTimer(false);
+    }
     return;
   }
   // Start attempt on server
@@ -1262,14 +1288,12 @@ async function beginFlow(){
   }
 
 async function submitFlow(){
+  if (isSubmitting || hasSubmitted) return;
   if (!attemptId) return logErr("Click Begin first.");
-  const submitBtn = S("submit");
-  const priorText = submitBtn ? submitBtn.textContent : "";
-  if (submitBtn) {
-    submitBtn.disabled = true;
-    submitBtn.textContent = "Submitting...";
-  }
+  if (!isGridFullyFilled()) return;
   if (paused) resumeGame(); // closes the pause and updates pausedTotalMs
+  isSubmitting = true;
+  updateSubmitState();
   const resultEl = S("result");
   if (resultEl) resultEl.textContent = "Submitting...";
   if (timerStartTime) {
@@ -1299,18 +1323,24 @@ async function submitFlow(){
       activeDisplay: localActiveDisplay
     });
 
-    localStorage.removeItem(storageKey(currentEmail));
-
-    S("result").textContent = `You got ${fin.percentCorrect}% correct. Official time: ${formatMs(localActiveMs)}. Check email/junk folder for your completed crossword.`;
-    if (submitBtn) {
-      submitBtn.textContent = "Submitted";
-    }
-  }catch(e){ logErr(e.message); }
+    hasSubmitted = true;
+    submittedScore = fin.percentCorrect ?? percentCorrect;
+    const elapsedMs = fin.elapsedMs == null ? NaN : Number(fin.elapsedMs);
+    const officialElapsedMs = Number.isFinite(elapsedMs) && elapsedMs >= 0 ? elapsedMs : localActiveMs;
+    clearTimeout(progressSaveTimer);
+    saveProgress(currentEmail);
+    S("pause").disabled = true;
+    S("result").textContent = "Successfully submitted. Check email for further info.";
+    S("submission-score").textContent = submittedScore == null ? "Unavailable" : `${submittedScore}%`;
+    S("submission-time").textContent = formatElapsedMs(officialElapsedMs);
+    S("submission-dialog").showModal();
+  }catch(e){
+    logErr(e.message);
+    if (!hasSubmitted) startTimer(false);
+  }
   finally {
-    if (submitBtn && submitBtn.textContent !== "Submitted") {
-      submitBtn.disabled = false;
-      submitBtn.textContent = priorText || "Submit";
-    }
+    isSubmitting = false;
+    updateSubmitState();
   }
 }
 
@@ -1429,3 +1459,4 @@ async function init(){
 });
 }
 document.addEventListener("DOMContentLoaded", init);
+
