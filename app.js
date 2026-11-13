@@ -33,6 +33,7 @@ let highlightFrame = null;
 
 // minimal config (index.html sets window.CONFIG)
 const CFG = window.CONFIG;
+const practiceMode = new URLSearchParams(location.search).has("practice");
 const MOBILE_QUERY = typeof window.matchMedia === "function"
   ? window.matchMedia("(max-width: 800px)")
   : null;
@@ -60,16 +61,9 @@ async function loadManifest(){
   return res.json();
 }
 
-function setChosenPuzzle(id){
-  CONFIG.weekId = id.trim();
-  // reflect selection in the UI if the chooser exists
-  const sel = document.getElementById('puzzle-chooser');
-  if (sel) sel.value = CONFIG.weekId;
-}
-
 // ===== Loading puzzle JSON =====
 function validatePuzzle(p){
-  if (!p || !Array.isArray(p.layout)) throw new Error("Puzzle missing 'layout' array.");
+  if (!p || !Array.isArray(p.layout) || !p.layout.length) throw new Error("Puzzle missing 'layout' rows.");
   const rows = p.layout.length;
   const cols = p.layout[0].length;
   if (!rows || !cols) throw new Error("Layout has zero size.");
@@ -85,7 +79,9 @@ function validatePuzzle(p){
   return p;
 }
 async function loadPuzzleJson(id){
-  const url = `puzzles/${id}.json`;
+  if (!/^[A-Za-z0-9_-]+$/.test(id)) throw new Error("Invalid puzzle ID.");
+  const folder = practiceMode ? "puzzles/archive" : "puzzles";
+  const url = `${folder}/${id}.json`;
   const res = await fetch(url, { cache: "no-store" });
   if (!res.ok) throw new Error(`Puzzle JSON not found at ${url} (HTTP ${res.status})`);
   const json = await res.json();
@@ -752,6 +748,7 @@ function handleLetterInput(ch) {
   const cell = document.querySelector(`.cell[data-r="${curR}"][data-c="${curC}"]`);
   if (cell) {
     cell.textContent = ch.toUpperCase();
+    clearPracticeMark(cell);
   }
 
   // move forward in the current direction
@@ -783,8 +780,10 @@ function handleBackspace() {
   let cell = document.querySelector(`.cell[data-r="${curR}"][data-c="${curC}"]`);
   if (cell && cell.textContent) {
     cell.textContent = '';
+    clearPracticeMark(cell);
     setActiveWord(puzzle, curR, curC);
     updateSubmitState();
+    scheduleProgressSave();
     return;
   }
 
@@ -807,6 +806,7 @@ function handleBackspace() {
   cell = document.querySelector(`.cell[data-r="${curR}"][data-c="${curC}"]`);
   if (cell) {
     cell.textContent = '';
+    clearPracticeMark(cell);
   }
 
   setActiveWord(puzzle, curR, curC);
@@ -830,6 +830,7 @@ function handlePhysicalKey(e) {
     return;
   }
   if (active?.closest?.(".text-settings")) return;
+  if (practiceMode && active?.closest?.("button, a") && (e.key === "Enter" || e.key === " ")) return;
   if (active && (active.tagName === "INPUT" || active.tagName === "TEXTAREA" || active.isContentEditable)) {
     return;
   }
@@ -991,7 +992,7 @@ function storageKey(email){
 }
 
 function saveProgress(email){
-  if (!attemptId) return;
+  if (practiceMode || !attemptId) return;
   const key = storageKey(email);
   try { localStorage.setItem(key, JSON.stringify({
     attemptId,
@@ -1015,9 +1016,7 @@ function scheduleProgressSave(){
 
 function loadProgress(email){
   const key = storageKey(email);
-  const raw = localStorage.getItem(key);
-  if (!raw) return null;
-  try { return JSON.parse(raw); } catch { return null; }
+  try { return JSON.parse(localStorage.getItem(key)); } catch { return null; }
 }
 
 /** Writes a flattened grid string back into your DIV-based cells */
@@ -1053,13 +1052,14 @@ function isGridFullyFilled(){
 }
 function updateSubmitState(){
   const btn = S("submit");
-  if (!btn) return;
+  if (!btn || practiceMode) return;
   btn.disabled = hasSubmitted || isSubmitting || !isGridFullyFilled();
   btn.textContent = hasSubmitted ? "Submitted" : isSubmitting ? "Submitting..." : "Submit";
 }
 
 // ===== Server calls (Google Apps Script) =====
 async function post(action, payload){
+  if (practiceMode) throw new Error("Practice puzzles stay on this device.");
   const body = new URLSearchParams();
   body.set("action", action);
   body.set("payload", JSON.stringify(payload));
@@ -1184,7 +1184,7 @@ function togglePause() {
 // ===== Flows =====
 async function beginFlow(){
   const beginBtn = S("btn-begin");
-  if (hasStartedAttempt || isStartingAttempt) return;
+  if (practiceMode || hasStartedAttempt || isStartingAttempt) return;
   isStartingAttempt = true;
   if (beginBtn) {
     beginBtn.disabled = true;
@@ -1235,13 +1235,7 @@ async function beginFlow(){
     hasStartedAttempt = true;
     isStartingAttempt = false;
 
-    S("overlay").style.display = "none";
-
-    document.body.classList.add("game-active");
-
-    requestAnimationFrame(() => {
-      applyPhoneWidthSizing(puzzle.rows, puzzle.cols);
-    });
+    showPuzzle();
 
     if (hasSubmitted) {
       S("timer").style.display = "inline-block";
@@ -1259,7 +1253,6 @@ async function beginFlow(){
   try {
     const st = await post("startAttempt", { weekId: CONFIG.weekId, name, studentNumber: student, email, lab });
     attemptId = st.attemptId;
-    localStorage.setItem(`cw:${CONFIG.weekId}:attempt:${email}`, attemptId);
     hasStartedAttempt = true;
     isStartingAttempt = false;
     currentEmail = email.toLowerCase().trim();
@@ -1275,20 +1268,13 @@ async function beginFlow(){
     return logErr(e.message);
   }
 
-  // Hide overlay + start timer
-  S("overlay").style.display = "none";
-
-  document.body.classList.add("game-active");
-
-  requestAnimationFrame(() => {
-    applyPhoneWidthSizing(puzzle.rows, puzzle.cols);
-  });
-
+  showPuzzle();
   startTimer(true);
-  }
+  saveProgress(currentEmail);
+}
 
 async function submitFlow(){
-  if (isSubmitting || hasSubmitted) return;
+  if (practiceMode || isSubmitting || hasSubmitted) return;
   if (!attemptId) return logErr("Click Begin first.");
   if (!isGridFullyFilled()) return;
   if (paused) resumeGame(); // closes the pause and updates pausedTotalMs
@@ -1363,59 +1349,140 @@ function computePercent(user, sol){
   return total ? Math.round(100 * correct / total) : 0;
 }
 
-// ===== Init =====
-async function init(){
-  initTextSettings();
-  try {
-    // 1) Read query param (?p=ID / ?puzzle=ID / ?puzzles=ID), else use manifest default
-    const params = new URLSearchParams(location.search);
-    const fromUrl = params.get('p') || params.get('puzzle') || params.get('puzzles');
-    const manifest = await loadManifest();
+function showPuzzle() {
+  if (practiceMode) document.title = `${puzzle.title || "Practice puzzle"} · BMB Weekly Crossword`;
+  S("overlay").style.display = "none";
+  S("play").inert = false;
+  document.body.classList.add("game-active");
+  if (practiceMode) document.body.classList.add("practice-active");
+  requestAnimationFrame(() => applyPhoneWidthSizing(puzzle.rows, puzzle.cols));
+}
 
-    const all = (manifest.puzzles || []);
-    const manifestDefault = manifest.default || all[0]?.id || null;
-    const chosen = (fromUrl && fromUrl.trim()) || CFG.weekId || manifestDefault;
-    // populate dropdown (if present)
-    const sel = document.getElementById('puzzle-chooser');
-    if (sel) {
-      sel.innerHTML = all.map(p => `<option value="${p.id}">${p.title || p.id}</option>`).join('');
-    }
-    if (chosen) setChosenPuzzle(chosen);
+function clearPracticeMark(cell) {
+  if (!practiceMode) return;
+  cell.classList.remove("practice-incorrect");
+  S("result").textContent = "";
+}
 
-    // 2) Load the chosen puzzle JSON from GitHub Pages
-    puzzle = await loadPuzzleJson(CONFIG.weekId);
-    S("title").textContent = puzzle.title || `BMB Weekly Crossword — ${CONFIG.weekId}`;
-    buildGrid(puzzle.layout);
-    buildKeys();
-
-    // when chooser changes, reload the puzzle
-    if (sel) {
-      sel.addEventListener('change', async () => {
-        try {
-          setChosenPuzzle(sel.value);
-          puzzle = await loadPuzzleJson(CONFIG.weekId);
-          S("title").textContent = puzzle.title || `BMB Weekly Crossword — ${CONFIG.weekId}`;
-          buildGrid(puzzle.layout);
-          buildKeys();
-          // optional: reset attempt state if someone switches before starting
-          attemptId = null;
-          S("overlayMsg").textContent = '';
-        } catch(e){
-          logErr(e.message);
-        }
-      });
-    }
-  } catch (e) {
-    console.warn('Preload failed:', e.message);
+function checkPracticeLetters() {
+  if (!practiceMode || !puzzle) return;
+  let filled = 0;
+  let incorrect = 0;
+  const solution = puzzle.solutionString.toUpperCase();
+  document.querySelectorAll("#grid .cell").forEach(cell => {
+    const letter = cell.textContent;
+    const index = Number(cell.dataset.r) * puzzle.cols + Number(cell.dataset.c);
+    const wrong = Boolean(letter && letter !== solution[index]);
+    cell.classList.toggle("practice-incorrect", wrong);
+    if (letter) filled++;
+    if (wrong) incorrect++;
+  });
+  const result = S("result");
+  if (incorrect) {
+    result.textContent = incorrect === 1 ? "1 incorrect letter is marked." : `${incorrect} incorrect letters are marked.`;
+  } else if (!filled) {
+    result.textContent = "Enter a letter to check it.";
+  } else {
+    result.textContent = isGridFullyFilled() ? "Puzzle solved!" : "All entered letters are correct.";
   }
+}
 
-    // Initialize soft keyboard
+function showPracticeLinks(archive) {
+  const list = S("practice-list");
+  for (const entry of archive) {
+    if (!/^[A-Za-z0-9_-]+$/.test(entry.id || "")) continue;
+    const item = document.createElement("li");
+    const link = document.createElement("a");
+    link.href = `?practice=${encodeURIComponent(entry.id)}`;
+    link.textContent = entry.title || entry.id;
+    item.append(link);
+    list.append(item);
+  }
+  S("practice-options").hidden = !list.children.length;
+}
+
+// ===== Init =====
+async function init() {
+  initTextSettings();
+  const params = new URLSearchParams(location.search);
+  const fromUrl = params.get("p") || params.get("puzzle") || params.get("puzzles");
+  const directWeek = fromUrl?.trim();
+  const manifest = await loadManifest().catch(error => {
+    console.warn("Puzzle manifest unavailable:", error.message);
+    return {};
+  });
+  const archive = Array.isArray(manifest.archive) ? manifest.archive : [];
+  showPracticeLinks(archive);
+
+  if (practiceMode) {
+    const id = params.get("practice");
+    const entry = archive.find(item => item.id === id);
+    S("entry-title").textContent = "Practice crossword";
+    S("show-challenge").hidden = true;
+    S("practice-recovery").hidden = false;
+    try {
+      if (!entry) throw new Error("Choose an available past puzzle.");
+      puzzle = await loadPuzzleJson(id);
+      S("practice-home").hidden = false;
+      if (manifest.default) {
+        S("practice-home").href = `?puzzles=${encodeURIComponent(manifest.default)}`;
+      }
+      S("pause").hidden = true;
+      S("submit").hidden = true;
+      S("practice-check").hidden = false;
+      S("practice-check").onclick = checkPracticeLetters;
+      buildGrid(puzzle.layout);
+      showPuzzle();
+    } catch (error) {
+      logErr(error.message);
+    }
+  } else {
+    CFG.weekId = directWeek || manifest.default || "";
+    const details = Array.isArray(manifest.puzzles)
+      ? manifest.puzzles.find(item => item.id === CFG.weekId)
+      : null;
+    if (details?.title) S("entry-title").textContent = details.title;
+    if (details?.guestLab) {
+      const credit = S("guest-credit");
+      credit.textContent = `Guest puzzle by ${details.guestLab}.`;
+      credit.hidden = false;
+    }
+    if (CFG.weekId) {
+      S("show-challenge").disabled = false;
+      S("show-challenge").textContent = directWeek ? `Enter the ${directWeek} challenge` : "Enter this week’s challenge";
+    } else {
+      logErr("Open the current challenge from your weekly email.");
+    }
+    S("show-challenge").onclick = () => {
+      S("entry-options").hidden = true;
+      S("challenge-form").hidden = false;
+      S("f-name").focus();
+    };
+    S("challenge-back").onclick = () => {
+      if (isStartingAttempt) return;
+      S("challenge-form").hidden = true;
+      S("entry-options").hidden = false;
+      S("overlayMsg").textContent = "";
+      S("show-challenge").focus();
+    };
+    S("challenge-form").onsubmit = event => {
+      event.preventDefault();
+      beginFlow();
+    };
+    if (CFG.weekId) {
+      // Warm the grid while players choose a mode or fill in the form.
+      // Begin retries the same puzzle if this fetch fails.
+      loadPuzzleJson(CFG.weekId).then(loaded => {
+        if (puzzle || isStartingAttempt) return;
+        puzzle = loaded;
+        buildGrid(puzzle.layout);
+      }).catch(error => console.warn("Preload failed:", error.message));
+    }
+  }
   buildKeys();
 
-  // wire buttons as you already do
-  S("btn-begin").onclick = beginFlow;
   S("toggle").onclick = () => {
-    if (paused) return;
+    if (!puzzle || paused) return;
 
     isAcross = !isAcross;
 
@@ -1453,10 +1520,8 @@ async function init(){
   console.log("App initialized");
 
   window.addEventListener("pagehide", () => {
-  if (attemptId && currentEmail) {
-    saveProgress(currentEmail);
-  }
-});
+    if (attemptId && currentEmail) saveProgress(currentEmail);
+  });
 }
 document.addEventListener("DOMContentLoaded", init);
 

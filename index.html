@@ -1,10 +1,10 @@
 <!doctype html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8" />
   <title>BMB Weekly Crossword</title>
   <meta name="viewport"
-    content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+    content="width=device-width, initial-scale=1, viewport-fit=cover">
 
   <link rel="icon" href="images/favicon-circle.ico" type="image/x-icon" />
   <link rel="stylesheet" href="style.css" />
@@ -14,6 +14,7 @@
   <main>
 <div class="status-bar">
   <div class="status-timing">
+    <a id="practice-home" href="./" hidden>Weekly challenge</a>
     <div id="timer" class="timer" style="display:none">00:00</div>
     <div id="pause-remaining" class="pause-remaining" aria-live="polite" hidden>Pauses 5/5</div>
   </div>
@@ -39,19 +40,36 @@
 
     <section id="overlay" class="overlay">
       <div class="card">
-        <h2>Enter your details to begin</h2>
-        <input id="f-name" placeholder="Full name" />
-        <input id="f-student" placeholder="Student number" />
-        <input id="f-email" placeholder="Email" />
-        <input id="f-lab" placeholder="Lab" />
-        <button id="btn-begin">Begin and Start Timer</button>
-        <p class="overlay-note">If given 'LOAD failed', click 'Start' again</p>
-        <div id="overlayMsg" class="msg"></div>
+        <div id="entry-options">
+          <h2 id="entry-title">BMB Weekly Crossword</h2>
+          <p id="guest-credit" hidden></p>
+          <button id="show-challenge" type="button" disabled>Enter this week’s challenge</button>
+          <nav id="practice-options" aria-label="Past puzzles" hidden>
+            <h3>Practice with a past puzzle</h3>
+            <p>Untimed, with optional letter checks.</p>
+            <ul id="practice-list"></ul>
+          </nav>
+        </div>
+        <form id="challenge-form" hidden>
+          <h2>Enter your details to begin</h2>
+          <label for="f-name">Full name</label>
+          <input id="f-name" autocomplete="name" required />
+          <label for="f-student">Student number</label>
+          <input id="f-student" inputmode="numeric" required />
+          <label for="f-email">Email</label>
+          <input id="f-email" type="email" autocomplete="email" required />
+          <label for="f-lab">Lab</label>
+          <input id="f-lab" required />
+          <button id="btn-begin" type="submit">Begin and Start Timer</button>
+          <button id="challenge-back" class="secondary" type="button">Back</button>
+        </form>
+        <div id="overlayMsg" class="msg" role="status"></div>
+        <a id="practice-recovery" href="./" hidden>Back to the weekly challenge</a>
       </div>
     </section>
     
     <!-- Puzzle area -->
-  <section id="play" class ="play">
+  <section id="play" class="play" inert>
     <section id="puzzle">
       <div id="grid-wrap"><div id="grid"></div></div>
 
@@ -67,9 +85,10 @@
         <button id="pause" type="button">Pause</button>
         <button id="toggle" type="button">Across →</button>       
         <button id="next-word">Next Clue</button>
+        <button id="practice-check" type="button" hidden>Check letters</button>
         <button id="submit" disabled>Submit</button>
       </div>
-      <div id="result"></div>
+      <div id="result" role="status"></div>
     </section>
 
     <aside class="cluewrap">
@@ -102,11 +121,8 @@
   </dialog>
 
   <script>
-    // Accept ?p=2025-W44, ?puzzle=..., or ?puzzles=...
-    const params = new URLSearchParams(location.search);
-    const urlPuzzle = params.get("p") || params.get("puzzle") || params.get("puzzles");
     window.CONFIG = {
-      weekId: urlPuzzle || "2026-W2",   // must match your JSON filename
+      weekId: "",
       api: "https://script.google.com/macros/s/AKfycbxm3tLeM8aXK6-I0BTKrpkoLzhkv9BZwnfnPRqXZ_pZzXSeOV8lV0MFhxd97yq75Afx/exec"
     };
   </script>

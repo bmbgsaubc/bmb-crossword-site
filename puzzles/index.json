@@ -1,9 +1,9 @@
 {
-  "puzzles": [
-    { "id": "2025-W44", "title": "Game Changers" },
-    { "id": "2025-W44", "title": "Game Changers" },
-    { "id": "2025-W46", "title": "Game Changers" },
-    { "id": "2025-W47", "title": "Universal Freestyle 178" }
-  ],
-  "default": "2025-W47"
+  "default": "2026-W46",
+  "archive": [
+    {
+      "id": "2026-W44",
+      "title": "Week 44 · 2026"
+    }
+  ]
 }
