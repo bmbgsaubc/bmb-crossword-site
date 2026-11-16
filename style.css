@@ -437,7 +437,9 @@ main {
   width: 100%;
 
   table-layout: fixed;
-  border-collapse: collapse;
+  /* Draw shared grid lines once to avoid WebKit collapsed-border paint gaps. */
+  border-collapse: separate;
+  border-spacing: 0;
 
   background: var(--surface);
 }
@@ -452,7 +454,8 @@ main {
 
   box-sizing: border-box;
 
-  border: 1px solid #9ca69f;
+  border-right: 1px solid #9ca69f;
+  border-bottom: 1px solid #9ca69f;
 
   background: var(--surface);
 
